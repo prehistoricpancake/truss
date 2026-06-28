@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import {
   IconLayoutDashboard,
@@ -37,7 +38,8 @@ export function ProductNav() {
     <nav className="w-[220px] h-screen bg-bg-product border-r border-border flex flex-col shrink-0">
       {/* Wordmark */}
       <div className="px-5 py-5">
-        <Link href="/dashboard" className="text-lg font-semibold text-white tracking-tight">
+        <Link href="/dashboard" className="flex items-center gap-2 text-lg font-semibold text-white tracking-tight">
+          <Image src="/logos/2.png" alt="Truss" width={24} height={24} className="rounded" />
           truss
         </Link>
       </div>

@@ -4,6 +4,10 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "Truss — Cross-Platform Content Infrastructure",
   description: "Ingest once, publish everywhere. AI-powered content repurposing for creators.",
+  icons: {
+    icon: "/logos/2.png",
+    apple: "/logos/2.png",
+  },
 };
 
 export default function RootLayout({
