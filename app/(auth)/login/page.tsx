@@ -6,6 +6,7 @@ import { IconBrandGoogle } from "@tabler/icons-react";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [loading, setLoading] = useState(false);
 
   const handleGoogleSignIn = () => {

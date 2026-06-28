@@ -1,14 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
-
 export function WarpedHero() {
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
   return (
     <section className="relative w-full h-[600px] overflow-hidden bg-bg-cinematic flex items-center justify-center">
       {/* Animated gradient background */}
@@ -69,13 +61,13 @@ export function WarpedHero() {
           {["PUBLISH", "ONCE", "EVERYWHERE"].map((word, i) => (
             <span
               key={`floor-${i}`}
-              className="text-[80px] font-black italic tracking-wider select-none"
+              className="hero-fade-in text-[80px] font-black italic tracking-wider select-none"
               style={{
                 color: "#6d5ef0",
-                opacity: mounted ? 0.15 + i * 0.05 : 0,
-                transition: `opacity 0.8s ease ${i * 0.2}s`,
+                "--fade-opacity": 0.15 + i * 0.05,
+                "--fade-delay": `${i * 0.2}s`,
                 textShadow: "0 0 40px rgba(109,94,240,0.3)",
-              }}
+              } as React.CSSProperties}
             >
               {word}
             </span>
@@ -93,13 +85,13 @@ export function WarpedHero() {
           {["CREATE", "DISTRIBUTE", "STREAM"].map((word, i) => (
             <span
               key={`ceil-${i}`}
-              className="text-[80px] font-black italic tracking-wider select-none"
+              className="hero-fade-in text-[80px] font-black italic tracking-wider select-none"
               style={{
                 color: "#6d5ef0",
-                opacity: mounted ? 0.12 + i * 0.04 : 0,
-                transition: `opacity 0.8s ease ${i * 0.15 + 0.3}s`,
+                "--fade-opacity": 0.12 + i * 0.04,
+                "--fade-delay": `${i * 0.15 + 0.3}s`,
                 textShadow: "0 0 40px rgba(109,94,240,0.2)",
-              }}
+              } as React.CSSProperties}
             >
               {word}
             </span>
@@ -117,13 +109,13 @@ export function WarpedHero() {
           {["YOURS", "TO", "PUBLISH"].map((word, i) => (
             <span
               key={`left-${i}`}
-              className="text-[72px] font-black italic tracking-wider select-none"
+              className="hero-fade-in text-[72px] font-black italic tracking-wider select-none"
               style={{
                 color: "#6d5ef0",
-                opacity: mounted ? 0.1 + i * 0.05 : 0,
-                transition: `opacity 0.8s ease ${i * 0.2 + 0.5}s`,
+                "--fade-opacity": 0.1 + i * 0.05,
+                "--fade-delay": `${i * 0.2 + 0.5}s`,
                 textShadow: "0 0 30px rgba(109,94,240,0.25)",
-              }}
+              } as React.CSSProperties}
             >
               {word}
             </span>
@@ -141,13 +133,13 @@ export function WarpedHero() {
           {["CLIP", "SHARE", "GROW"].map((word, i) => (
             <span
               key={`right-${i}`}
-              className="text-[72px] font-black italic tracking-wider select-none"
+              className="hero-fade-in text-[72px] font-black italic tracking-wider select-none"
               style={{
                 color: "#6d5ef0",
-                opacity: mounted ? 0.1 + i * 0.05 : 0,
-                transition: `opacity 0.8s ease ${i * 0.2 + 0.6}s`,
+                "--fade-opacity": 0.1 + i * 0.05,
+                "--fade-delay": `${i * 0.2 + 0.6}s`,
                 textShadow: "0 0 30px rgba(109,94,240,0.25)",
-              }}
+              } as React.CSSProperties}
             >
               {word}
             </span>
@@ -158,20 +150,20 @@ export function WarpedHero() {
       {/* Center overlay — main headline */}
       <div className="relative z-10 text-center flex flex-col items-center gap-6">
         <h1
-          className="text-[56px] md:text-[64px] font-extrabold text-white leading-tight tracking-tight"
+          className="hero-fade-in text-[56px] md:text-[64px] font-extrabold text-white leading-tight tracking-tight"
           style={{
-            opacity: mounted ? 1 : 0,
-            transition: "opacity 0.6s ease 0.8s",
-          }}
+            "--fade-opacity": 1,
+            "--fade-delay": "0.8s",
+          } as React.CSSProperties}
         >
           YOURS TO PUBLISH
         </h1>
         <p
-          className="text-zinc-400 text-lg max-w-md"
+          className="hero-fade-in text-zinc-400 text-lg max-w-md"
           style={{
-            opacity: mounted ? 1 : 0,
-            transition: "opacity 0.6s ease 1s",
-          }}
+            "--fade-opacity": 1,
+            "--fade-delay": "1s",
+          } as React.CSSProperties}
         >
           One video in, every platform out. Intelligent clips, chapters, and scheduling.
         </p>
@@ -179,11 +171,11 @@ export function WarpedHero() {
         {/* CTA button */}
         <a
           href="/login"
-          className="mt-4 inline-flex items-center px-8 py-3 bg-accent hover:bg-accent/90 text-white text-sm font-medium rounded-full transition-colors"
+          className="hero-fade-in mt-4 inline-flex items-center px-8 py-3 bg-accent hover:bg-accent/90 text-white text-sm font-medium rounded-full transition-colors"
           style={{
-            opacity: mounted ? 1 : 0,
-            transition: "opacity 0.6s ease 1.2s",
-          }}
+            "--fade-opacity": 1,
+            "--fade-delay": "1.2s",
+          } as React.CSSProperties}
         >
           Get started
         </a>
@@ -200,6 +192,16 @@ export function WarpedHero() {
 
       {/* Keyframe animations */}
       <style jsx>{`
+        .hero-fade-in {
+          opacity: var(--fade-opacity, 1);
+          transition: opacity 0.8s ease;
+          transition-delay: var(--fade-delay, 0s);
+        }
+        @starting-style {
+          .hero-fade-in {
+            opacity: 0;
+          }
+        }
         @keyframes heroGlow {
           0% {
             transform: scale(1) rotate(0deg);

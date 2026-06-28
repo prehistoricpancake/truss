@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useCallback } from "react";
 import { BentoStat } from "@/components/BentoStat";
 import { ChatFeed, type ChatMessage } from "@/components/ChatFeed";
 import { SimulatedBadge } from "@/components/SimulatedBadge";
@@ -71,7 +71,7 @@ export default function DashboardPage() {
       "subscribe NOW",
     ];
 
-    let baseline = 50;
+    const baseline = 50;
     let msgCount = 0;
 
     const interval = setInterval(() => {
