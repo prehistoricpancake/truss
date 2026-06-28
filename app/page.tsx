@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { WarpedHero } from "@/components/WarpedHero";
 import { MasonryGrid } from "@/components/MasonryGrid";
 import {
@@ -53,7 +54,10 @@ export default function LandingPage() {
     <div className="min-h-screen bg-bg-cinematic">
       {/* Navigation */}
       <nav className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-6 py-4 bg-bg-cinematic/80 backdrop-blur-sm border-b border-border-hair">
-        <span className="text-lg font-semibold text-white tracking-tight">truss</span>
+        <span className="flex items-center gap-2 text-lg font-semibold text-white tracking-tight">
+          <Image src="/logos/2.png" alt="Truss" width={28} height={28} className="rounded" />
+          truss
+        </span>
         <div className="flex items-center gap-4">
           <Link href="/login" className="text-sm text-zinc-400 hover:text-white transition-colors">
             Sign in
