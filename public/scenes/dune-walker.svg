@@ -1,0 +1,136 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <!-- Warm sky gradient -->
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#1a0a2e"/>
+      <stop offset="30%" stop-color="#2d1b4e"/>
+      <stop offset="50%" stop-color="#7b3f00"/>
+      <stop offset="70%" stop-color="#c2703a"/>
+      <stop offset="90%" stop-color="#e8a84c"/>
+      <stop offset="100%" stop-color="#f0c060"/>
+    </linearGradient>
+
+    <!-- Sun glow -->
+    <radialGradient id="sunGlow" cx="0.7" cy="0.45" r="0.35">
+      <stop offset="0%" stop-color="#fff5d4" stop-opacity="0.8"/>
+      <stop offset="30%" stop-color="#f0c060" stop-opacity="0.4"/>
+      <stop offset="100%" stop-color="#c2703a" stop-opacity="0"/>
+    </radialGradient>
+
+    <!-- Dune sand -->
+    <linearGradient id="duneSand1" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#d4a650"/>
+      <stop offset="50%" stop-color="#c49240"/>
+      <stop offset="100%" stop-color="#a67830"/>
+    </linearGradient>
+
+    <linearGradient id="duneSand2" x1="0" y1="0" x2="0.5" y2="1">
+      <stop offset="0%" stop-color="#b88a38"/>
+      <stop offset="100%" stop-color="#8a6420"/>
+    </linearGradient>
+
+    <linearGradient id="duneShadow" x1="0" y1="0" x2="1" y2="0.5">
+      <stop offset="0%" stop-color="#6b4c18"/>
+      <stop offset="100%" stop-color="#8a6420"/>
+    </linearGradient>
+
+    <!-- Rock ridge -->
+    <linearGradient id="rock" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#5a4a3a"/>
+      <stop offset="100%" stop-color="#3d2e1e"/>
+    </linearGradient>
+
+    <!-- Vegetation -->
+    <linearGradient id="scrub" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#6b7a40"/>
+      <stop offset="100%" stop-color="#4a5a28"/>
+    </linearGradient>
+
+    <!-- Film grain filter -->
+    <filter id="grain" x="0" y="0" width="100%" height="100%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.65" numOctaves="3" stitchTiles="stitch"/>
+      <feColorMatrix type="saturate" values="0"/>
+      <feBlend in="SourceGraphic" mode="multiply" result="grain"/>
+      <feComponentTransfer>
+        <feFuncA type="linear" slope="0.12"/>
+      </feComponentTransfer>
+      <feBlend in="SourceGraphic" in2="grain" mode="overlay"/>
+    </filter>
+
+    <!-- Warm vignette -->
+    <radialGradient id="vignette" cx="0.5" cy="0.5" r="0.7">
+      <stop offset="0%" stop-color="transparent"/>
+      <stop offset="70%" stop-color="transparent"/>
+      <stop offset="100%" stop-color="#1a0a00" stop-opacity="0.6"/>
+    </radialGradient>
+  </defs>
+
+  <!-- Sky -->
+  <rect width="1200" height="800" fill="url(#sky)"/>
+
+  <!-- Sun glow -->
+  <rect width="1200" height="800" fill="url(#sunGlow)"/>
+
+  <!-- Sun disc -->
+  <circle cx="840" cy="360" r="40" fill="#fff5d4" opacity="0.9"/>
+  <circle cx="840" cy="360" r="60" fill="#f0c060" opacity="0.2"/>
+
+  <!-- Far dunes (background) -->
+  <path d="M0 520 Q200 440 400 480 Q550 420 700 460 Q850 400 1000 450 Q1100 430 1200 460 L1200 800 L0 800Z" fill="url(#duneSand2)" opacity="0.6"/>
+
+  <!-- Rock ridge (winding) -->
+  <path d="M100 580 Q200 530 350 550 Q450 520 550 540 Q650 510 750 530 Q850 500 950 520 Q1050 540 1100 530 L1100 570 Q1000 560 900 550 Q800 540 700 560 Q600 550 500 570 Q400 560 300 580 Q200 570 100 590Z" fill="url(#rock)" opacity="0.8"/>
+  <path d="M100 585 Q200 555 350 565 Q500 545 650 555 Q800 535 950 545 L950 555 Q800 545 650 565 Q500 555 350 575 Q200 565 100 595Z" fill="#4a3a2a" opacity="0.4"/>
+
+  <!-- Mid dunes -->
+  <path d="M0 580 Q150 520 350 560 Q500 500 700 540 Q900 490 1200 530 L1200 800 L0 800Z" fill="url(#duneSand1)"/>
+
+  <!-- Dune shadow lines -->
+  <path d="M0 600 Q200 560 400 590 Q600 550 800 580 Q1000 540 1200 570 L1200 580 Q1000 550 800 590 Q600 560 400 600 Q200 570 0 610Z" fill="url(#duneShadow)" opacity="0.3"/>
+
+  <!-- Foreground dune -->
+  <path d="M0 650 Q100 600 250 640 Q400 590 550 630 Q700 600 900 620 Q1050 600 1200 640 L1200 800 L0 800Z" fill="#c49240"/>
+  <path d="M0 660 Q150 630 300 650 Q500 610 700 640 Q900 620 1200 650 L1200 800 L0 800Z" fill="#b88a38"/>
+
+  <!-- Olive scrub vegetation -->
+  <g opacity="0.8">
+    <!-- Scrub cluster 1 -->
+    <ellipse cx="180" cy="640" rx="25" ry="12" fill="url(#scrub)"/>
+    <ellipse cx="195" cy="635" rx="15" ry="10" fill="#7a8a48"/>
+    <ellipse cx="170" cy="643" rx="12" ry="8" fill="#5a6a30"/>
+
+    <!-- Scrub cluster 2 -->
+    <ellipse cx="520" cy="620" rx="20" ry="10" fill="url(#scrub)"/>
+    <ellipse cx="535" cy="616" rx="14" ry="9" fill="#7a8a48"/>
+
+    <!-- Scrub cluster 3 -->
+    <ellipse cx="850" cy="610" rx="22" ry="11" fill="url(#scrub)"/>
+    <ellipse cx="865" cy="607" rx="16" ry="9" fill="#6b7a40"/>
+    <ellipse cx="840" cy="614" rx="10" ry="7" fill="#5a6a30"/>
+
+    <!-- Scrub cluster 4 -->
+    <ellipse cx="1050" cy="635" rx="18" ry="9" fill="url(#scrub)"/>
+    <ellipse cx="1060" cy="632" rx="12" ry="7" fill="#7a8a48"/>
+
+    <!-- Small scattered scrub -->
+    <ellipse cx="350" cy="650" rx="8" ry="5" fill="#5a6a30" opacity="0.6"/>
+    <ellipse cx="680" cy="630" rx="10" ry="6" fill="#6b7a40" opacity="0.5"/>
+    <ellipse cx="950" cy="625" rx="7" ry="4" fill="#5a6a30" opacity="0.6"/>
+  </g>
+
+  <!-- Tiny figure (the "walker") -->
+  <g transform="translate(620, 555)" opacity="0.7">
+    <line x1="0" y1="0" x2="0" y2="-12" stroke="#2a1a0a" stroke-width="2"/>
+    <circle cx="0" cy="-14" r="2.5" fill="#2a1a0a"/>
+    <line x1="0" y1="-5" x2="-3" y2="0" stroke="#2a1a0a" stroke-width="1.5"/>
+    <line x1="0" y1="-5" x2="4" y2="-2" stroke="#2a1a0a" stroke-width="1.5"/>
+    <line x1="0" y1="-8" x2="-4" y2="-12" stroke="#2a1a0a" stroke-width="1.2"/>
+    <line x1="0" y1="-8" x2="3" y2="-11" stroke="#2a1a0a" stroke-width="1.2"/>
+  </g>
+
+  <!-- Film grain overlay -->
+  <rect width="1200" height="800" filter="url(#grain)" opacity="0.4"/>
+
+  <!-- Warm vignette -->
+  <rect width="1200" height="800" fill="url(#vignette)"/>
+</svg>
