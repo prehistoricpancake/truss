@@ -2,7 +2,7 @@
 
 **Cross-platform content infrastructure for creators.** Upload one video or connect a live stream — Truss extracts the best moments, scores them for viral potential, and publishes vertical 9:16 clips across YouTube, TikTok, Instagram, Twitch, and Discord simultaneously.
 
-🌐 **Live:** [truss-rust.vercel.app](https://truss-rust.vercel.app)
+🌐 **Live:** [truss-rust.vercel.app](https://the-truss-app.vercel.app/)
 
 ---
 
