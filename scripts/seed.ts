@@ -1,198 +1,336 @@
-// Seed script — populates DynamoDB with realistic demo data
-// Run with: npx tsx scripts/seed.ts
+#!/usr/bin/env npx tsx
+/**
+ * Truss DynamoDB seed script
+ * Usage: npx tsx scripts/seed.ts <email>
+ * Example: npx tsx scripts/seed.ts wanjikuwawambui@gmail.com
+ *
+ * Needs env vars: AWS_REGION, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, DYNAMODB_TABLE_NAME
+ * Easiest: run `vercel env pull .env.local` first, then:
+ *   export $(grep -v '^#' .env.local | xargs) && npx tsx scripts/seed.ts <email>
+ */
 
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
-import { DynamoDBDocumentClient, PutCommand } from "@aws-sdk/lib-dynamodb";
+import { DynamoDBDocumentClient, PutCommand, BatchWriteCommand } from "@aws-sdk/lib-dynamodb";
+import { randomBytes } from "crypto";
+import { readFileSync, existsSync } from "fs";
+import { resolve } from "path";
 
-const client = new DynamoDBClient({ region: process.env.AWS_REGION || "us-east-1" });
-const docClient = DynamoDBDocumentClient.from(client);
-const TABLE = process.env.DYNAMODB_TABLE_NAME || "truss-main";
-
-const DEMO_USER_ID = "demo-creator-001";
-const PK = `CREATOR#${DEMO_USER_ID}`;
-
-async function put(item: Record<string, unknown>) {
-  await docClient.send(new PutCommand({ TableName: TABLE, Item: item }));
+// Load .env.local (Next.js convention) then .env as fallback
+for (const file of [".env.local", ".env"]) {
+  const p = resolve(process.cwd(), file);
+  if (!existsSync(p)) continue;
+  for (const line of readFileSync(p, "utf8").split("\n")) {
+    const m = line.match(/^([^#=\s][^=]*)=(.*)$/);
+    if (m) process.env[m[1].trim()] ??= m[2].trim().replace(/^["']|["']$/g, "");
+  }
 }
 
-async function seed() {
-  console.log("Seeding Truss demo data...");
+// ── Config ────────────────────────────────────────────────────────────────────
 
-  // Creator metadata
+const EMAIL = process.argv[2];
+if (!EMAIL) { console.error("Usage: npx tsx scripts/seed.ts <email>"); process.exit(1); }
+
+const TABLE = process.env.DYNAMODB_TABLE_NAME;
+const REGION = process.env.AWS_REGION;
+if (!TABLE || !REGION) { console.error("Missing DYNAMODB_TABLE_NAME or AWS_REGION env vars"); process.exit(1); }
+
+const db = DynamoDBDocumentClient.from(new DynamoDBClient({ region: REGION }));
+const PK = `CREATOR#${EMAIL}`;
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+const uid = () => randomBytes(6).toString("hex");
+const daysAgo = (n: number) => { const d = new Date(); d.setDate(d.getDate() - n); return d.toISOString(); };
+const dateStr = (d: Date) => d.toISOString().split("T")[0];
+const pick = <T>(arr: T[]) => arr[Math.floor(Math.random() * arr.length)];
+const rand = (min: number, max: number) => Math.floor(Math.random() * (max - min + 1)) + min;
+
+async function batchPut(items: Record<string, unknown>[]) {
+  // DynamoDB BatchWrite limit: 25 items per request
+  for (let i = 0; i < items.length; i += 25) {
+    const chunk = items.slice(i, i + 25);
+    const reqItems: Record<string, { PutRequest: { Item: Record<string, unknown> } }[]> = {};
+    reqItems[TABLE as string] = chunk.map(Item => ({ PutRequest: { Item } }));
+    await db.send(new BatchWriteCommand({ RequestItems: reqItems }));
+  }
+}
+
+async function put(item: Record<string, unknown>) {
+  await db.send(new PutCommand({ TableName: TABLE, Item: item }));
+}
+
+// ── Data ──────────────────────────────────────────────────────────────────────
+
+const VIDEO_TITLES = [
+  // Gaming
+  "Valorant Ranked Grind — Hitting Immortal EP.1",
+  "Valorant Ranked Grind — Hitting Immortal EP.2",
+  "CS2 Tournament Watch Party + Analysis",
+  "Minecraft Survival Series EP.7 — The Nether Update",
+  "Minecraft Survival Series EP.8 — Finding Diamonds",
+  "Elden Ring First Playthrough — Margit Boss Fight",
+  "Elden Ring — Godrick the Grafted (no summons)",
+  "Fortnite Zero Build — Solo 1st Place Challenge",
+  // Dev / Tech
+  "Building a SaaS in 30 Days | Day 1 — Idea & Stack",
+  "Building a SaaS in 30 Days | Day 8 — Auth is HARD",
+  "Building a SaaS in 30 Days | Day 15 — Soft Launch",
+  "Building a SaaS in 30 Days | Day 30 — We Made It",
+  "React Hooks Deep Dive — useEffect, useMemo, useCallback",
+  "Next.js 15 App Router — Full Crash Course",
+  "TypeScript for Beginners: Zero to Hero",
+  "DynamoDB Masterclass for Node.js Developers",
+  "AWS for Beginners — The Complete Guide 2024",
+  "Live Coding: Building a Real-Time Chat App",
+  "Figma to Code — Building Beautiful UIs in Tailwind",
+  // Creator / IRL
+  "Full Podcast EP.42 | The Future of Creator Monetization",
+  "Full Podcast EP.43 | AI Tools Every Creator Needs",
+  "Full Podcast EP.44 | The Creator Economy is Broken",
+  "Interview: $10M/yr Creator Shares Her Strategy",
+  "How I Went from 0 to 50K Subscribers",
+  "My YouTube Studio Tour 2024",
+  "Day in My Life: Creator Edition",
+  "Freelancing to Full-Time Creator — My Journey",
+  "Creator Burnout: My Story and How I Recovered",
+  "How I Edit My Videos (Full Workflow)",
+  "Growing on TikTok in 2024 | What Actually Works",
+];
+
+const CLIP_HOOKS = [
+  "This moment got me 10K new followers",
+  "Chat was LOSING their minds 😂",
+  "The clutch nobody saw coming",
+  "I can't believe this happened live",
+  "The moment everything changed",
+  "POV: when it finally clicks",
+  "Nobody talks about this technique",
+  "The plot twist nobody expected",
+  "This is why I love streaming",
+  "Hot take that broke the internet",
+  "The collab that changed everything",
+  "Biggest fail of my creator career",
+  "From 0 to viral in 2 minutes",
+  "Chat predicted it… somehow",
+  "This took 3 hours to set up",
+  "Unbelievable reaction caught live",
+  "The best play of the entire stream",
+  "My most requested tutorial clip",
+  "This answer changed everything",
+  "The funniest thing happened mid-stream",
+  "Viewers couldn't believe this was real",
+  "The comeback nobody thought was possible",
+  "One line of code fixed everything",
+  "This is peak creator content",
+  "The sponsor deal that almost destroyed me",
+];
+
+const PLATFORMS = ["twitch", "twitch", "youtube", "twitch", "youtube", "twitch", "youtube"] as const;
+
+// ── Seed ─────────────────────────────────────────────────────────────────────
+
+async function seed() {
+  console.log(`\n🌱 Seeding Truss for ${EMAIL} → table "${TABLE}"\n`);
+  const now = new Date().toISOString();
+
+  // ── Creator metadata ─────────────────────────────────────────────────────
   await put({
-    PK,
-    SK: "METADATA",
-    email: "creator@truss.dev",
-    name: "Alex Chen",
+    PK, SK: "METADATA",
+    email: EMAIL,
+    name: EMAIL.split("@")[0].replace(/[._]/g, " ").replace(/\b\w/g, c => c.toUpperCase()),
     plan: "pro",
-    stripeCustomerId: "cus_demo_123",
-    connectedPlatforms: ["twitch", "youtube", "discord"],
-    createdAt: "2024-11-15T10:00:00Z",
-    updatedAt: new Date().toISOString(),
+    connectedPlatforms: ["youtube", "twitch", "tiktok"],
+    createdAt: daysAgo(400),
+    updatedAt: now,
   });
   console.log("  ✓ Creator metadata");
 
-  // Analytics — last 14 days
-  const today = new Date();
-  for (let i = 13; i >= 0; i--) {
-    const date = new Date(today);
-    date.setDate(date.getDate() - i);
-    const dateStr = date.toISOString().split("T")[0];
-    await put({
+  // ── Platform tokens ──────────────────────────────────────────────────────
+  const tokenItems = [
+    { platform: "youtube", username: "@joycecreates", channelId: "UCjoy123abc" },
+    { platform: "twitch",  username: "joycecreates",  channelId: "842910234" },
+    { platform: "tiktok",  username: "@joyce.creates", channelId: "tiktok_joy99" },
+  ].map(p => ({
+    PK, SK: `PLATFORM_TOKEN#${p.platform}`,
+    ...p,
+    accessToken:  `atk_${uid()}`,
+    refreshToken: `rtk_${uid()}`,
+    expiresAt: new Date(Date.now() + 30 * 86_400_000).toISOString(),
+    connectedAt: daysAgo(60),
+  }));
+  await batchPut(tokenItems);
+  console.log("  ✓ 3 platform tokens");
+
+  // ── Assets (30) ───────────────────────────────────────────────────────────
+  const assetStatuses = [
+    ...Array(27).fill("ready"),
+    "processing", "processing", "failed",
+  ] as Array<"ready" | "processing" | "failed">;
+
+  const assetRows: Record<string, unknown>[] = [];
+  const assetIds: { id: string; title: string }[] = [];
+
+  for (let i = 0; i < VIDEO_TITLES.length; i++) {
+    const videoId = `vid-${uid()}`;
+    const title = VIDEO_TITLES[i];
+    const status = assetStatuses[i];
+    const daysBack = VIDEO_TITLES.length * 3 - i * 3;
+    const chapterCount = status === "ready" ? rand(4, 12) : 0;
+
+    assetIds.push({ id: videoId, title });
+
+    const chapters = status === "ready"
+      ? Array.from({ length: chapterCount }, (_, j) => ({
+          start_offset: j * rand(180, 600),
+          end_offset:   j * rand(180, 600) + rand(30, 120),
+          title: `${title.split("—")[0].trim()} — Part ${j + 1}`,
+          viralityScore: rand(25, 97),
+        }))
+      : undefined;
+
+    assetRows.push({
       PK,
-      SK: `ANALYTICS#DAILY#${dateStr}`,
-      date: dateStr,
-      views: Math.floor(1200 + Math.random() * 3000 + (14 - i) * 150),
-      followers: Math.floor(50 + Math.random() * 200 + (14 - i) * 10),
-      clips: Math.floor(2 + Math.random() * 8),
-      watchTimeMinutes: Math.floor(800 + Math.random() * 2000 + (14 - i) * 100),
+      SK: `ASSET#${videoId}`,
+      videoId,
+      filename: title.replace(/[^a-zA-Z0-9 ]/g, "").replace(/\s+/g, "_").slice(0, 60) + ".mp4",
+      s3Key: `uploads/${EMAIL}/${videoId}/original.mp4`,
+      status,
+      chapters,
+      createdAt: daysAgo(daysBack),
+      updatedAt: daysAgo(Math.max(0, daysBack - 1)),
     });
   }
-  console.log("  ✓ 14 days of analytics");
+  await batchPut(assetRows);
+  console.log(`  ✓ ${assetRows.length} assets`);
 
-  // Assets
-  const assets = [
-    {
-      videoId: "vid-001",
-      filename: "10378789-uhd_2160_4096_25fps.mp4",
-      s3Key: "uploads/demo/vid-001/10378789-uhd_2160_4096_25fps.mp4",
-      localPath: "/videos/10378789-uhd_2160_4096_25fps.mp4",
-      status: "ready",
-      chapterCount: 5,
-    },
-    {
-      videoId: "vid-002",
-      filename: "8039795-uhd_2160_4096_25fps.mp4",
-      s3Key: "uploads/demo/vid-002/8039795-uhd_2160_4096_25fps.mp4",
-      localPath: "/videos/8039795-uhd_2160_4096_25fps.mp4",
-      status: "ready",
-      chapterCount: 8,
-    },
-    {
-      videoId: "vid-003",
-      filename: "12155414_1080_1920_30fps.mp4",
-      s3Key: "uploads/demo/vid-003/12155414_1080_1920_30fps.mp4",
-      localPath: "/videos/12155414_1080_1920_30fps.mp4",
-      status: "processing",
-      chapterCount: 0,
-    },
-    {
-      videoId: "vid-004",
-      filename: "13400159-hd_1080_1920_60fps.mp4",
-      s3Key: "uploads/demo/vid-004/13400159-hd_1080_1920_60fps.mp4",
-      localPath: "/videos/13400159-hd_1080_1920_60fps.mp4",
-      status: "ready",
-      chapterCount: 12,
-    },
-    {
-      videoId: "vid-005",
-      filename: "8134919-hd_1080_1920_25fps.mp4",
-      s3Key: "uploads/demo/vid-005/8134919-hd_1080_1920_25fps.mp4",
-      localPath: "/videos/8134919-hd_1080_1920_25fps.mp4",
-      status: "ready",
-      chapterCount: 6,
-    },
-    {
-      videoId: "vid-006",
-      filename: "video1.mp4",
-      s3Key: "uploads/demo/vid-006/video1.mp4",
-      localPath: "/videos/video1.mp4",
-      status: "ready",
-      chapterCount: 4,
-    },
-    {
-      videoId: "vid-007",
-      filename: "video2.mp4",
-      s3Key: "uploads/demo/vid-007/video2.mp4",
-      localPath: "/videos/video2.mp4",
-      status: "ready",
-      chapterCount: 3,
-    },
-  ];
+  // ── Clips (180+) ──────────────────────────────────────────────────────────
+  const clipRows: Record<string, unknown>[] = [];
+  const clipStatuses = ["published", "published", "published", "ready", "ready", "queued", "rendering"];
 
-  for (const asset of assets) {
-    await put({
+  // Use only the 27 "ready" assets for clips
+  const readyAssets = assetIds.slice(0, 27);
+  for (let i = 0; i < readyAssets.length; i++) {
+    const { id: assetId } = readyAssets[i];
+    const numClips = rand(4, 8);
+    const daysBack = VIDEO_TITLES.length * 3 - i * 3;
+
+    for (let j = 0; j < numClips; j++) {
+      const clipId = `clip-${uid()}`;
+      // Virality distribution: mostly 35-75, occasional spikes 80-98
+      const viralityScore = Math.random() < 0.15 ? rand(80, 98) : rand(35, 75);
+
+      clipRows.push({
+        PK,
+        SK: `CLIP#${clipId}`,
+        clipId,
+        assetId,
+        title: CLIP_HOOKS[(i * 7 + j) % CLIP_HOOKS.length],
+        s3Key: `clips/${EMAIL}/${clipId}/clip.mp4`,
+        viralityScore,
+        status: pick(clipStatuses),
+        createdAt: daysAgo(Math.max(0, daysBack - j)),
+      });
+    }
+  }
+  await batchPut(clipRows);
+  console.log(`  ✓ ${clipRows.length} clips`);
+
+  // ── Streams (25) ─────────────────────────────────────────────────────────
+  const streamRows: Record<string, unknown>[] = [];
+  const streamIds: string[] = [];
+
+  for (let i = 0; i < 25; i++) {
+    const streamId = `stream-${uid()}`;
+    streamIds.push(streamId);
+    const daysBack = 25 - i;
+    const durationMs = rand(60, 420) * 60_000; // 1–7 hours
+    const startedAt = new Date(Date.now() - daysBack * 86_400_000 - rand(0, 14_400_000)).toISOString();
+    const endedAt = new Date(new Date(startedAt).getTime() + durationMs).toISOString();
+    const isLive = i === 0;
+
+    streamRows.push({
       PK,
-      SK: `ASSET#${asset.videoId}`,
-      ...asset,
-      createdAt: new Date(Date.now() - Math.random() * 7 * 86400000).toISOString(),
-      updatedAt: new Date().toISOString(),
+      SK: `STREAM#${streamId}`,
+      streamId,
+      platform: PLATFORMS[i % PLATFORMS.length],
+      status: isLive ? "live" : (i < 22 ? "ended" : "processing"),
+      startedAt,
+      ...(!isLive ? { endedAt, vodS3Path: `vods/${EMAIL}/${streamId}/vod.mp4` } : {}),
     });
   }
-  console.log("  ✓ 7 assets");
+  await batchPut(streamRows);
+  console.log(`  ✓ ${streamRows.length} streams`);
 
-  // Chapters for vid-001
-  await put({
-    PK,
-    SK: "ASSET#vid-001#CHAPTERS",
-    chapters: [
-      { start_offset: 0, end_offset: 45, title: "Opening — insane clutch play", viralityScore: 92 },
-      { start_offset: 120, end_offset: 175, title: "Team wipe reaction", viralityScore: 87 },
-      { start_offset: 340, end_offset: 395, title: "Viewer challenge accepted", viralityScore: 74 },
-      { start_offset: 510, end_offset: 560, title: "New personal best moment", viralityScore: 95 },
-      { start_offset: 720, end_offset: 780, title: "Chat goes wild — donation storm", viralityScore: 88 },
-    ],
-    createdAt: new Date().toISOString(),
-  });
-  console.log("  ✓ Chapters for gaming highlights");
+  // ── Chat spikes (400+) ────────────────────────────────────────────────────
+  const spikeRows: Record<string, unknown>[] = [];
 
-  // Clips
-  const clips = [
-    { clipId: "clip-001", assetId: "vid-001", title: "Insane clutch play", viralityScore: 92, status: "ready" },
-    { clipId: "clip-002", assetId: "vid-001", title: "Team wipe reaction", viralityScore: 87, status: "ready" },
-    { clipId: "clip-003", assetId: "vid-002", title: "useEffect explained in 30s", viralityScore: 78, status: "ready" },
-    { clipId: "clip-004", assetId: "vid-001", title: "Chat goes wild", viralityScore: 88, status: "published" },
-    { clipId: "clip-005", assetId: "vid-004", title: "AI will replace developers?", viralityScore: 94, status: "queued" },
-    { clipId: "clip-006", assetId: "vid-005", title: "Perfect ramen egg technique", viralityScore: 71, status: "ready" },
-    { clipId: "clip-007", assetId: "vid-001", title: "New PB moment", viralityScore: 95, status: "rendering" },
-    { clipId: "clip-008", assetId: "vid-003", title: "Street performer duet", viralityScore: 82, status: "queued" },
-  ];
+  for (let s = 0; s < streamIds.length; s++) {
+    const streamId = streamIds[s];
+    const numSpikes = rand(12, 28);
+    const streamBase = new Date(Date.now() - (25 - s) * 86_400_000).getTime();
 
-  for (const clip of clips) {
-    await put({
+    for (let k = 0; k < numSpikes; k++) {
+      const offsetMs = rand(0, 360) * 60_000; // within 6 hours
+      const ts = new Date(streamBase + offsetMs).toISOString();
+      // Unique SK: timestamp + index
+      const spikeTs = new Date(streamBase + offsetMs + k).toISOString();
+
+      spikeRows.push({
+        PK,
+        SK: `LIVE_CHAT_SPIKE#${spikeTs}`,
+        timestamp: ts,
+        messageRate: rand(60, 520),
+        baseline: rand(8, 45),
+        streamId,
+        highlightRange: {
+          start: offsetMs / 1000,
+          end:   offsetMs / 1000 + rand(20, 90),
+        },
+      });
+    }
+  }
+  await batchPut(spikeRows);
+  console.log(`  ✓ ${spikeRows.length} chat spikes`);
+
+  // ── Analytics (365 days) ─────────────────────────────────────────────────
+  const analyticsRows: Record<string, unknown>[] = [];
+  let followers = rand(8_000, 14_000);
+
+  for (let i = 364; i >= 0; i--) {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    const dow = d.getDay();
+    const isWeekend = dow === 0 || dow === 6;
+    const progress = (364 - i) / 364; // 0 → 1 growth factor
+    const weekBump = isWeekend ? 1.45 : 1;
+    const spike = Math.random() < 0.05 ? rand(2, 5) : 1; // occasional viral day
+
+    const views = Math.floor((600 + Math.random() * 500) * weekBump * (0.4 + progress * 1.4) * spike);
+    const clips = Math.floor(Math.random() * 5 * weekBump);
+    const watchTimeMinutes = Math.floor(views * (2.5 + Math.random() * 4));
+    followers += rand(10, 120) + Math.floor(progress * 60) + (spike > 1 ? rand(200, 800) : 0);
+
+    analyticsRows.push({
       PK,
-      SK: `CLIP#${clip.clipId}`,
-      ...clip,
-      s3Key: `clips/demo/${clip.clipId}/output.mp4`,
-      createdAt: new Date(Date.now() - Math.random() * 5 * 86400000).toISOString(),
+      SK: `ANALYTICS#DAILY#${dateStr(d)}`,
+      date: dateStr(d),
+      views,
+      followers,
+      clips,
+      watchTimeMinutes,
     });
   }
-  console.log("  ✓ 8 clips");
+  await batchPut(analyticsRows);
+  console.log(`  ✓ ${analyticsRows.length} days of analytics`);
 
-  // Streams
-  await put({
-    PK,
-    SK: "STREAM#stream-001",
-    streamId: "stream-001",
-    platform: "twitch",
-    status: "ended",
-    vodS3Path: "uploads/demo/streams/stream-001.mp4",
-    startedAt: new Date(Date.now() - 2 * 86400000).toISOString(),
-    endedAt: new Date(Date.now() - 2 * 86400000 + 3 * 3600000).toISOString(),
-  });
-  await put({
-    PK,
-    SK: "STREAM#stream-002",
-    streamId: "stream-002",
-    platform: "youtube",
-    status: "live",
-    startedAt: new Date().toISOString(),
-  });
-  console.log("  ✓ 2 streams");
-
-  // Chat spikes — including one pre-flagged spike
-  await put({
-    PK,
-    SK: `LIVE_CHAT_SPIKE#${new Date(Date.now() - 1800000).toISOString()}`,
-    timestamp: new Date(Date.now() - 1800000).toISOString(),
-    messageRate: 340,
-    baseline: 120,
-    highlightRange: { start: Date.now() - 1830000, end: Date.now() - 1770000 },
-    streamId: "stream-002",
-  });
-  console.log("  ✓ 1 pre-flagged chat spike");
-
-  console.log("\n✅ Seed complete! Dashboard should look alive on first load.");
+  // ── Summary ───────────────────────────────────────────────────────────────
+  const total = 1 + 3 + assetRows.length + clipRows.length + streamRows.length + spikeRows.length + analyticsRows.length;
+  console.log(`
+✅  Done — ${total} items written to DynamoDB
+    ${assetRows.length} assets  ·  ${clipRows.length} clips  ·  ${streamRows.length} streams
+    ${spikeRows.length} chat spikes  ·  ${analyticsRows.length} days analytics
+    followers: ${followers.toLocaleString()}
+`);
 }
 
-seed().catch(console.error);
+seed().catch((err) => { console.error("\n❌ Seed failed:", err); process.exit(1); });
