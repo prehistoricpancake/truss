@@ -1,12 +1,13 @@
 import Link from "next/link";
-import { IconCheck, IconX } from "@tabler/icons-react";
+import Image from "next/image";
+import { IconCheck, IconX, IconSparkles } from "@tabler/icons-react";
 
 const plans = [
   {
     name: "Starter",
     price: "$0",
     cadence: "forever",
-    cta: "Current plan",
+    cta: "Get started",
     ctaStyle: "outline" as const,
     featured: false,
     features: [
@@ -24,7 +25,7 @@ const plans = [
     name: "Pro",
     price: "$29",
     cadence: "/mo",
-    cta: "Upgrade to Pro",
+    cta: "Coming soon",
     ctaStyle: "filled" as const,
     featured: true,
     badge: "Most popular",
@@ -43,7 +44,7 @@ const plans = [
     name: "Studio",
     price: "$99",
     cadence: "/mo",
-    cta: "Talk to sales",
+    cta: "Coming soon",
     ctaStyle: "outline" as const,
     featured: false,
     features: [
@@ -64,7 +65,8 @@ export default function PricingPage() {
     <div className="min-h-screen bg-bg-cinematic">
       {/* Nav */}
       <nav className="flex items-center justify-between px-6 py-4 border-b border-border-hair">
-        <Link href="/" className="text-lg font-semibold text-white tracking-tight">
+        <Link href="/" className="flex items-center gap-2 text-lg font-semibold text-white tracking-tight">
+          <Image src="/logos/2.png" alt="Truss" width={24} height={24} className="rounded" />
           truss
         </Link>
         <div className="flex items-center gap-4">
@@ -86,6 +88,16 @@ export default function PricingPage() {
         <p className="text-zinc-500 text-lg max-w-md mx-auto">
           Start free and scale as you grow. No hidden fees.
         </p>
+      </div>
+
+      {/* Coming soon banner */}
+      <div className="max-w-5xl mx-auto px-6 mb-8">
+        <div className="flex items-center justify-center gap-3 px-5 py-3 bg-accent/5 border border-accent/20 rounded-xl">
+          <IconSparkles size={18} className="text-accent" />
+          <p className="text-sm text-zinc-300">
+            Paid plans are coming soon. For now, all features are <span className="text-white font-medium">free to use</span>.
+          </p>
+        </div>
       </div>
 
       {/* Plan cards */}
@@ -136,20 +148,17 @@ export default function PricingPage() {
 
             {/* CTA */}
             <div className="mt-8">
-              {plan.ctaStyle === "filled" ? (
+              {plan.name === "Starter" ? (
                 <Link
                   href="/signup"
-                  className="block w-full text-center py-3 bg-accent hover:bg-accent/90 text-white text-sm font-medium rounded-lg transition-colors"
-                >
-                  {plan.cta}
-                </Link>
-              ) : (
-                <Link
-                  href={plan.name === "Studio" ? "#" : "/signup"}
                   className="block w-full text-center py-3 border border-border text-zinc-400 hover:text-white text-sm font-medium rounded-lg transition-colors"
                 >
                   {plan.cta}
                 </Link>
+              ) : (
+                <span className="block w-full text-center py-3 bg-zinc-800/50 text-zinc-500 text-sm font-medium rounded-lg cursor-default">
+                  {plan.cta}
+                </span>
               )}
             </div>
           </div>

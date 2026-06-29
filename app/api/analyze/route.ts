@@ -1,4 +1,4 @@
-import { openai } from "@ai-sdk/openai";
+import { google } from "@ai-sdk/google";
 import { generateObject } from "ai";
 import { z } from "zod";
 import { NextRequest, NextResponse } from "next/server";
@@ -26,7 +26,7 @@ export async function POST(req: NextRequest) {
     }
 
     const result = await generateObject({
-      model: openai("gpt-4o"),
+      model: google("gemini-3.5-flash"),
       schema: highlightSchema,
       prompt: `Analyze this media asset context payload. Cross-reference transcript timestamps with the raw visual energy flags. Isolate high-impact narrative ranges and score each for viral potential.
 

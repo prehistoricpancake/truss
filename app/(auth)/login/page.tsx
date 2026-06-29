@@ -17,8 +17,7 @@ export default function LoginPage() {
   const handleEmailContinue = (e: React.FormEvent) => {
     e.preventDefault();
     if (!email) return;
-    // Navigate to password entry (for existing users, this would check if account exists)
-    window.location.href = `/signup?email=${encodeURIComponent(email)}&mode=login`;
+    window.location.href = "/api/auth/signin/cognito?callbackUrl=/dashboard";
   };
 
   return (
