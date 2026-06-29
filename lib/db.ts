@@ -98,6 +98,18 @@ export interface AnalyticsDaily {
   watchTimeMinutes: number;
 }
 
+export interface PlatformToken {
+  PK: string;
+  SK: string; // PLATFORM_TOKEN#<platform>
+  platform: string;
+  accessToken: string;
+  refreshToken?: string;
+  expiresAt?: string;
+  username?: string;
+  channelId?: string;
+  connectedAt: string;
+}
+
 // Access patterns
 
 export async function createCreator(userId: string, email: string, name?: string) {
@@ -156,6 +168,35 @@ export async function updateCreatorPlan(
   );
 }
 
+export async function updateCreator(
+  userId: string,
+  updates: { name?: string; connectedPlatforms?: string[] }
+) {
+  const exprs: string[] = ["updatedAt = :now"];
+  const names: Record<string, string> = {};
+  const values: Record<string, unknown> = { ":now": new Date().toISOString() };
+
+  if (updates.name !== undefined) {
+    exprs.push("#n = :name");
+    names["#n"] = "name";
+    values[":name"] = updates.name;
+  }
+  if (updates.connectedPlatforms !== undefined) {
+    exprs.push("connectedPlatforms = :platforms");
+    values[":platforms"] = updates.connectedPlatforms;
+  }
+
+  await getDocClient().send(
+    new UpdateCommand({
+      TableName: getTable(),
+      Key: { PK: `CREATOR#${userId}`, SK: "METADATA" },
+      UpdateExpression: `SET ${exprs.join(", ")}`,
+      ExpressionAttributeNames: Object.keys(names).length ? names : undefined,
+      ExpressionAttributeValues: values,
+    })
+  );
+}
+
 export async function createAsset(userId: string, videoId: string, filename: string, s3Key: string) {
   const now = new Date().toISOString();
   await getDocClient().send(
@@ -209,9 +250,11 @@ export async function getAssets(userId: string): Promise<Asset[]> {
     new QueryCommand({
       TableName: getTable(),
       KeyConditionExpression: "PK = :pk AND begins_with(SK, :sk)",
+      FilterExpression: "NOT contains(SK, :chapters)",
       ExpressionAttributeValues: {
         ":pk": `CREATOR#${userId}`,
         ":sk": "ASSET#",
+        ":chapters": "#CHAPTERS",
       },
     })
   );
@@ -308,6 +351,59 @@ export async function putAnalytics(userId: string, analytics: Omit<AnalyticsDail
         SK: `ANALYTICS#DAILY#${analytics.date}`,
         ...analytics,
       },
+    })
+  );
+}
+
+export async function savePlatformToken(
+  userId: string,
+  token: Omit<PlatformToken, "PK" | "SK">
+) {
+  await getDocClient().send(
+    new PutCommand({
+      TableName: getTable(),
+      Item: {
+        PK: `CREATOR#${userId}`,
+        SK: `PLATFORM_TOKEN#${token.platform}`,
+        ...token,
+      },
+    })
+  );
+}
+
+export async function getPlatformToken(
+  userId: string,
+  platform: string
+): Promise<PlatformToken | null> {
+  const result = await getDocClient().send(
+    new GetCommand({
+      TableName: getTable(),
+      Key: { PK: `CREATOR#${userId}`, SK: `PLATFORM_TOKEN#${platform}` },
+    })
+  );
+  return (result.Item as PlatformToken) || null;
+}
+
+export async function getPlatformTokens(userId: string): Promise<PlatformToken[]> {
+  const result = await getDocClient().send(
+    new QueryCommand({
+      TableName: getTable(),
+      KeyConditionExpression: "PK = :pk AND begins_with(SK, :sk)",
+      ExpressionAttributeValues: {
+        ":pk": `CREATOR#${userId}`,
+        ":sk": "PLATFORM_TOKEN#",
+      },
+    })
+  );
+  return (result.Items as PlatformToken[]) || [];
+}
+
+export async function deletePlatformToken(userId: string, platform: string) {
+  const { DeleteCommand } = await import("@aws-sdk/lib-dynamodb");
+  await getDocClient().send(
+    new DeleteCommand({
+      TableName: getTable(),
+      Key: { PK: `CREATOR#${userId}`, SK: `PLATFORM_TOKEN#${platform}` },
     })
   );
 }

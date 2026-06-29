@@ -10,32 +10,50 @@ import {
   IconBroadcast,
   IconChartBar,
   IconSettings,
+  IconPlugConnected,
   IconBrandTwitch,
   IconBrandYoutube,
   IconBrandTiktok,
+  IconBrandInstagram,
   IconBrandDiscord,
 } from "@tabler/icons-react";
 
-const navItems = [
+const NAV_ITEMS = [
   { href: "/dashboard", label: "Dashboard", icon: IconLayoutDashboard },
-  { href: "/assets", label: "Assets", icon: IconFolder },
-  { href: "/clips", label: "Clips", icon: IconScissors },
-  { href: "/streams", label: "Streams", icon: IconBroadcast },
+  { href: "/assets",    label: "Assets",    icon: IconFolder },
+  { href: "/clips",     label: "Clips",     icon: IconScissors },
+  { href: "/streams",   label: "Streams",   icon: IconBroadcast },
   { href: "/analytics", label: "Analytics", icon: IconChartBar },
 ];
 
-const connectedPlatforms = [
-  { name: "Twitch", icon: IconBrandTwitch, connected: true },
-  { name: "YouTube", icon: IconBrandYoutube, connected: true },
-  { name: "TikTok", icon: IconBrandTiktok, connected: false },
-  { name: "Discord", icon: IconBrandDiscord, connected: true },
-];
+const PLATFORM_ICONS: Record<string, React.ElementType> = {
+  twitch:    IconBrandTwitch,
+  youtube:   IconBrandYoutube,
+  tiktok:    IconBrandTiktok,
+  instagram: IconBrandInstagram,
+  discord:   IconBrandDiscord,
+};
 
-export function ProductNav() {
+const ALL_PLATFORMS = ["youtube", "twitch", "tiktok", "instagram", "discord"];
+
+type Props = {
+  creatorName?: string;
+  creatorEmail?: string;
+  connectedPlatforms?: string[];
+};
+
+export function ProductNav({ creatorName, creatorEmail, connectedPlatforms = [] }: Props) {
   const pathname = usePathname();
 
+  const initials = (creatorName ?? creatorEmail ?? "??")
+    .split(" ")
+    .map((w) => w[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
+
   return (
-    <nav className="w-[220px] h-screen bg-bg-product border-r border-border flex flex-col shrink-0">
+    <nav id="product-nav" className="w-[220px] h-screen bg-bg-product border-r border-border flex flex-col shrink-0">
       {/* Wordmark */}
       <div className="px-5 py-5">
         <Link href="/dashboard" className="flex items-center gap-2 text-lg font-semibold text-white tracking-tight">
@@ -45,8 +63,8 @@ export function ProductNav() {
       </div>
 
       {/* Main nav */}
-      <div className="flex-1 px-3 space-y-0.5">
-        {navItems.map((item) => {
+      <div className="flex-1 px-3 space-y-0.5 overflow-y-auto">
+        {NAV_ITEMS.map((item) => {
           const isActive = pathname.startsWith(item.href);
           return (
             <Link
@@ -64,23 +82,38 @@ export function ProductNav() {
           );
         })}
 
-        {/* Connected section */}
+        {/* Connected platforms section */}
         <div className="pt-6">
-          <p className="px-3 text-[11px] font-medium text-zinc-600 uppercase tracking-wider mb-2">
-            Connected
-          </p>
-          {connectedPlatforms.map((platform) => (
-            <div
-              key={platform.name}
-              className="flex items-center gap-3 px-3 py-1.5 text-sm text-zinc-500"
+          <div className="flex items-center justify-between px-3 mb-2">
+            <p className="text-[11px] font-medium text-zinc-600 uppercase tracking-wider">Connected</p>
+            <Link
+              id="nav-connect"
+              href="/connect"
+              className={`text-[10px] transition-colors ${
+                pathname.startsWith("/connect")
+                  ? "text-accent"
+                  : "text-zinc-600 hover:text-accent"
+              }`}
             >
-              <platform.icon size={16} stroke={1.5} />
-              <span>{platform.name}</span>
-              {platform.connected && (
-                <span className="w-1.5 h-1.5 rounded-full bg-success ml-auto" />
-              )}
-            </div>
-          ))}
+              Manage
+            </Link>
+          </div>
+
+          {ALL_PLATFORMS.map((pid) => {
+            const Icon = PLATFORM_ICONS[pid] ?? IconPlugConnected;
+            const isConnected = connectedPlatforms.includes(pid);
+            return (
+              <Link
+                key={pid}
+                href="/connect"
+                className="flex items-center gap-3 px-3 py-1.5 text-sm rounded-lg hover:bg-white/[0.03] transition-colors"
+              >
+                <Icon size={16} stroke={1.5} className={isConnected ? "text-zinc-300" : "text-zinc-700"} />
+                <span className={isConnected ? "text-zinc-400" : "text-zinc-700 capitalize"}>{pid}</span>
+                {isConnected && <span className="w-1.5 h-1.5 rounded-full bg-success ml-auto" />}
+              </Link>
+            );
+          })}
         </div>
       </div>
 
@@ -90,11 +123,12 @@ export function ProductNav() {
           href="/profile"
           className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.03] transition-colors"
         >
-          <div className="w-7 h-7 rounded-full bg-gradient-to-br from-accent to-purple-400 flex items-center justify-center text-[11px] font-medium text-white">
-            JW
+          <div className="w-7 h-7 rounded-full bg-gradient-to-br from-accent to-purple-400 flex items-center justify-center text-[11px] font-medium text-white shrink-0">
+            {initials}
           </div>
           <div className="min-w-0">
-            <p className="text-sm text-zinc-200 truncate">My Workspace</p>
+            <p className="text-sm text-zinc-200 truncate">{creatorName ?? "My Workspace"}</p>
+            {creatorEmail && <p className="text-[10px] text-zinc-600 truncate">{creatorEmail}</p>}
           </div>
           <IconSettings size={16} stroke={1.5} className="ml-auto shrink-0" />
         </Link>
