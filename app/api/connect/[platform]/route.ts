@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { deletePlatformToken } from "@/lib/db";
 
-const BASE = process.env.NEXTAUTH_URL || "https://truss-rust.vercel.app";
+const BASE = process.env.NEXTAUTH_URL || "https://the-truss-app.vercel.app";
 
 const OAUTH_CONFIGS: Record<string, (state: string) => string> = {
   youtube: (state) => {
