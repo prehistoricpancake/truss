@@ -244,15 +244,14 @@ export async function getAssets(userId: string): Promise<Asset[]> {
     new QueryCommand({
       TableName: getTable(),
       KeyConditionExpression: "PK = :pk AND begins_with(SK, :sk)",
-      FilterExpression: "NOT contains(SK, :chapters)",
       ExpressionAttributeValues: {
         ":pk": `CREATOR#${userId}`,
         ":sk": "ASSET#",
-        ":chapters": "#CHAPTERS",
       },
     })
   );
-  return (result.Items as Asset[]) || [];
+  const items = (result.Items as Asset[]) || [];
+  return items.filter((item) => !item.SK.includes("#CHAPTERS"));
 }
 
 export async function createClip(userId: string, clip: Omit<Clip, "PK" | "SK">) {
