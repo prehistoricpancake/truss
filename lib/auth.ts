@@ -1,12 +1,23 @@
 import NextAuth from "next-auth";
 import CognitoProvider from "next-auth/providers/cognito";
 
+const cognitoDomain = `https://${process.env.COGNITO_HOSTED_DOMAIN}.auth.${process.env.AWS_REGION}.amazoncognito.com`;
+
 export const { handlers, signIn, signOut, auth } = NextAuth({
   providers: [
     CognitoProvider({
       clientId: process.env.COGNITO_CLIENT_ID!,
       clientSecret: process.env.COGNITO_CLIENT_SECRET!,
       issuer: `https://cognito-idp.${process.env.AWS_REGION}.amazonaws.com/${process.env.COGNITO_USER_POOL_ID}`,
+      authorization: {
+        url: `${cognitoDomain}/oauth2/authorize`,
+        params: {
+          scope: "openid email profile",
+          response_type: "code",
+        },
+      },
+      token: `${cognitoDomain}/oauth2/token`,
+      userinfo: `${cognitoDomain}/oauth2/userInfo`,
     }),
   ],
   secret: process.env.NEXTAUTH_SECRET,
