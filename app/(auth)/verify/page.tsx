@@ -18,9 +18,13 @@ export default function VerifyPage(props: {
     setError("");
 
     try {
-      const { confirmSignUp } = await import("@/lib/cognito");
-      await confirmSignUp(email, code);
-      window.location.href = "/success";
+      const { cognitoConfirmSignUp } = await import("@/app/actions/auth");
+      const result = await cognitoConfirmSignUp(email, code);
+      if (!result.success) {
+        setError(result.error || "Verification failed");
+      } else {
+        window.location.href = "/api/auth/signin/cognito?callbackUrl=/dashboard";
+      }
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Verification failed");
     } finally {
@@ -30,8 +34,11 @@ export default function VerifyPage(props: {
 
   const handleResend = async () => {
     try {
-      const { resendConfirmationCode } = await import("@/lib/cognito");
-      await resendConfirmationCode(email);
+      const { cognitoResendCode } = await import("@/app/actions/auth");
+      const result = await cognitoResendCode(email);
+      if (!result.success) {
+        setError(result.error || "Failed to resend");
+      }
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Failed to resend");
     }

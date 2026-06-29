@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState, use } from "react";
+
 import { IconBrandGoogle, IconCheck, IconX } from "@tabler/icons-react";
 
 type Step = "email" | "password" | "verify";
@@ -45,10 +46,13 @@ export default function SignupPage(props: {
     setError("");
 
     try {
-      // Real Cognito signup via cognito.ts
-      const { signUp } = await import("@/lib/cognito");
-      await signUp(email, password);
-      setStep("verify");
+      const { cognitoSignUp } = await import("@/app/actions/auth");
+      const result = await cognitoSignUp(email, password);
+      if (!result.success) {
+        setError(result.error || "Signup failed");
+      } else {
+        setStep("verify");
+      }
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Signup failed");
     } finally {
@@ -62,9 +66,14 @@ export default function SignupPage(props: {
     setError("");
 
     try {
-      const { confirmSignUp } = await import("@/lib/cognito");
-      await confirmSignUp(email, verificationCode);
-      window.location.href = "/success";
+      const { cognitoConfirmSignUp } = await import("@/app/actions/auth");
+      const result = await cognitoConfirmSignUp(email, verificationCode);
+      if (!result.success) {
+        setError(result.error || "Verification failed");
+        return;
+      }
+      // Cognito account confirmed — redirect to NextAuth sign-in to establish session
+      window.location.href = "/api/auth/signin/cognito?callbackUrl=/dashboard";
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Verification failed");
     } finally {
@@ -74,8 +83,11 @@ export default function SignupPage(props: {
 
   const handleResend = async () => {
     try {
-      const { resendConfirmationCode } = await import("@/lib/cognito");
-      await resendConfirmationCode(email);
+      const { cognitoResendCode } = await import("@/app/actions/auth");
+      const result = await cognitoResendCode(email);
+      if (!result.success) {
+        setError(result.error || "Failed to resend code");
+      }
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Failed to resend code");
     }
