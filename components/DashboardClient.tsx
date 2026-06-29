@@ -30,7 +30,7 @@ function formatWatchTime(minutes: number): string {
 }
 
 export function DashboardClient({ creator, assets, clips, analytics, recentSpikes }: Props) {
-  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
+  const [chatMessages] = useState<ChatMessage[]>([]);
 
   // Derived stats
   const totalClips = clips.length;
@@ -60,7 +60,6 @@ export function DashboardClient({ creator, assets, clips, analytics, recentSpike
   })();
 
   const displayName = creator.name || creator.email.split("@")[0];
-  const initials = displayName.slice(0, 2).toUpperCase();
 
   return (
     <div className="flex h-screen">

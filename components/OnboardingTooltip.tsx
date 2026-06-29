@@ -79,15 +79,13 @@ export function OnboardingTooltip() {
 
   useEffect(() => {
     if (!localStorage.getItem(LS_KEY)) {
-      // Small delay so the page layout settles before measuring
-      const t = setTimeout(() => setStep(0), 600);
+      const t = setTimeout(() => {
+        setStep(0);
+        updateRect(0);
+      }, 600);
       return () => clearTimeout(t);
     }
-  }, []);
-
-  useEffect(() => {
-    updateRect(step);
-  }, [step, updateRect]);
+  }, [updateRect]);
 
   // Recompute on scroll / resize
   useEffect(() => {
@@ -105,8 +103,18 @@ export function OnboardingTooltip() {
     localStorage.setItem(LS_KEY, "1");
     setStep(-1);
   };
-  const next = () => (step < STEPS.length - 1 ? setStep(step + 1) : finish());
-  const back = () => setStep(step - 1);
+  const next = () => {
+    if (step < STEPS.length - 1) {
+      setStep(step + 1);
+      updateRect(step + 1);
+    } else {
+      finish();
+    }
+  };
+  const back = () => {
+    setStep(step - 1);
+    updateRect(step - 1);
+  };
 
   if (step < 0 || step >= STEPS.length || !rect) return null;
 

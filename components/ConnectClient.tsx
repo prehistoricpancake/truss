@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   IconBrandYoutube,
   IconBrandTiktok,
@@ -83,20 +83,29 @@ type Props = {
 export function ConnectClient({ connectedPlatforms, tokens, success, errorParam }: Props) {
   const [connecting, setConnecting] = useState<string | null>(null);
   const [disconnecting, setDisconnecting] = useState<string | null>(null);
-  const [toast, setToast] = useState<{ type: "success" | "error"; message: string } | null>(null);
+  const [toast, setToast] = useState<{ type: "success" | "error"; message: string } | null>(() => {
+    if (success) return { type: "success", message: `${capitalize(success)} connected successfully!` };
+    if (errorParam) return { type: "error", message: decodeURIComponent(errorParam) };
+    return null;
+  });
+  const [navigateTo, setNavigateTo] = useState<string | null>(null);
+  const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    if (success) setToast({ type: "success", message: `${capitalize(success)} connected successfully!` });
-    if (errorParam) setToast({ type: "error", message: decodeURIComponent(errorParam) });
-    if (success || errorParam) {
-      const t = setTimeout(() => setToast(null), 4000);
-      return () => clearTimeout(t);
-    }
-  }, [success, errorParam]);
+    if (!toast) return;
+    toastTimerRef.current = setTimeout(() => setToast(null), 4000);
+    return () => {
+      if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+    };
+  }, [toast]);
+
+  useEffect(() => {
+    if (navigateTo) window.location.href = navigateTo;
+  }, [navigateTo]);
 
   const handleConnect = (platformId: string) => {
     setConnecting(platformId);
-    window.location.href = `/api/connect/${platformId}`;
+    setNavigateTo(`/api/connect/${platformId}`);
   };
 
   const handleDisconnect = async (platformId: string) => {
