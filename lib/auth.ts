@@ -1,53 +1,46 @@
 import NextAuth from "next-auth";
-import CognitoProvider from "next-auth/providers/cognito";
-
-const cognitoDomain = `https://${process.env.COGNITO_HOSTED_DOMAIN}.auth.${process.env.AWS_REGION}.amazoncognito.com`;
+import Credentials from "next-auth/providers/credentials";
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   providers: [
-    CognitoProvider({
-      clientId: process.env.COGNITO_CLIENT_ID!,
-      clientSecret: process.env.COGNITO_CLIENT_SECRET!,
-      issuer: `https://cognito-idp.${process.env.AWS_REGION}.amazonaws.com/${process.env.COGNITO_USER_POOL_ID}`,
-      authorization: {
-        url: `${cognitoDomain}/oauth2/authorize`,
-        params: {
-          scope: "openid email profile",
-          response_type: "code",
-        },
+    Credentials({
+      credentials: {
+        email: { label: "Email", type: "email" },
+        token: { label: "Token", type: "text" },
       },
-      token: `${cognitoDomain}/oauth2/token`,
-      userinfo: `${cognitoDomain}/oauth2/userInfo`,
-    }),
-  ],
-  secret: process.env.NEXTAUTH_SECRET,
-  callbacks: {
-    async signIn({ user, account }) {
-      if (account?.provider === "cognito" && user.id) {
-        // First login: create creator record in DynamoDB
-        // This is handled by the post-confirmation trigger or here
+      authorize: async (credentials) => {
+        const email = credentials?.email as string;
+        const token = credentials?.token as string;
+        if (!email || !token) return null;
+
+        const { verifyMagicToken } = await import("@/lib/magic");
+        const valid = await verifyMagicToken(email, token);
+        if (!valid) return null;
+
+        // Provision creator record on first login
         try {
           const { createCreator, getCreator } = await import("@/lib/db");
-          const existing = await getCreator(user.id);
+          const existing = await getCreator(email);
           if (!existing) {
-            await createCreator(user.id, user.email || "", user.name || undefined);
+            await createCreator(email, email);
           }
         } catch (e) {
-          console.error("Failed to create creator record:", e);
+          console.error("Failed to provision creator:", e);
         }
-      }
-      return true;
-    },
+
+        return { id: email, email };
+      },
+    }),
+  ],
+  session: { strategy: "jwt" },
+  secret: process.env.NEXTAUTH_SECRET,
+  callbacks: {
     async session({ session, token }) {
-      if (token.sub) {
-        session.user.id = token.sub;
-      }
+      if (token.sub) session.user.id = token.sub;
       return session;
     },
     async jwt({ token, user }) {
-      if (user?.id) {
-        token.sub = user.id;
-      }
+      if (user?.id) token.sub = user.id;
       return token;
     },
   },

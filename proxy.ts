@@ -12,9 +12,10 @@ const protectedPaths = [
   "/profile",
   "/billing",
   "/upload",
+  "/onboarding",
 ];
 
-const authPaths = ["/login", "/signup", "/verify", "/success"];
+const authPaths = ["/login", "/signup", "/verify", "/success", "/magic-verify"];
 
 export default function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
