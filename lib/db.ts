@@ -1,20 +1,14 @@
-import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import {
-  DynamoDBDocumentClient,
   PutCommand,
   GetCommand,
   QueryCommand,
   UpdateCommand,
+  DeleteCommand,
 } from "@aws-sdk/lib-dynamodb";
-
-let _docClient: DynamoDBDocumentClient | null = null;
+import { getDynamoDocClient } from "@/lib/aws";
 
 function getDocClient() {
-  if (!_docClient) {
-    const client = new DynamoDBClient({ region: process.env.AWS_REGION });
-    _docClient = DynamoDBDocumentClient.from(client);
-  }
-  return _docClient;
+  return getDynamoDocClient();
 }
 
 function getTable() {
@@ -399,7 +393,6 @@ export async function getPlatformTokens(userId: string): Promise<PlatformToken[]
 }
 
 export async function deletePlatformToken(userId: string, platform: string) {
-  const { DeleteCommand } = await import("@aws-sdk/lib-dynamodb");
   await getDocClient().send(
     new DeleteCommand({
       TableName: getTable(),

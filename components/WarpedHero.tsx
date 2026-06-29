@@ -1,6 +1,6 @@
 "use client";
 
-export function WarpedHero() {
+export function WarpedHero({ hideCta }: { hideCta?: boolean } = {}) {
   return (
     <section className="relative w-full h-[600px] overflow-hidden bg-bg-cinematic flex items-center justify-center">
       {/* Animated gradient background */}
@@ -169,16 +169,18 @@ export function WarpedHero() {
         </p>
 
         {/* CTA button */}
-        <a
-          href="/login"
-          className="hero-fade-in mt-4 inline-flex items-center px-8 py-3 bg-accent hover:bg-accent/90 text-white text-sm font-medium rounded-full transition-colors"
-          style={{
-            "--fade-opacity": 1,
-            "--fade-delay": "1.2s",
-          } as React.CSSProperties}
-        >
-          Get started
-        </a>
+        {!hideCta && (
+          <a
+            href="/login"
+            className="hero-fade-in mt-4 inline-flex items-center px-8 py-3 bg-accent hover:bg-accent/90 text-white text-sm font-medium rounded-full transition-colors"
+            style={{
+              "--fade-opacity": 1,
+              "--fade-delay": "1.2s",
+            } as React.CSSProperties}
+          >
+            Get started
+          </a>
+        )}
       </div>
 
       {/* Vignette overlay */}
