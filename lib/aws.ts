@@ -1,50 +1,63 @@
-import { STSClient, AssumeRoleWithWebIdentityCommand } from "@aws-sdk/client-sts";
-import { S3Client } from "@aws-sdk/client-s3";
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
+import { DynamoDBDocumentClient } from "@aws-sdk/lib-dynamodb";
+import { S3Client } from "@aws-sdk/client-s3";
+import { STSClient, AssumeRoleWithWebIdentityCommand } from "@aws-sdk/client-sts";
 
-// OIDC-based credential provider for Vercel deployments
-// Falls back to default credential chain for local development
-async function getOIDCCredentials() {
+type CachedCreds = {
+  accessKeyId: string;
+  secretAccessKey: string;
+  sessionToken: string;
+  expiry: number;
+};
+
+let _cachedCreds: CachedCreds | null = null;
+
+function buildCredentialProvider() {
   const webIdentityToken = process.env.AWS_WEB_IDENTITY_TOKEN;
   const roleArn = process.env.AWS_ROLE_ARN;
+  if (!webIdentityToken || !roleArn) return undefined;
 
-  if (!webIdentityToken || !roleArn) {
-    // Local dev: use default credential chain (AWS CLI profile, env vars, etc.)
-    return undefined;
-  }
+  return async (): Promise<CachedCreds> => {
+    const now = Date.now();
+    if (_cachedCreds && _cachedCreds.expiry > now + 60_000) return _cachedCreds;
 
-  const sts = new STSClient({ region: process.env.AWS_REGION });
-  const command = new AssumeRoleWithWebIdentityCommand({
-    RoleArn: roleArn,
-    RoleSessionName: "truss-session",
-    WebIdentityToken: webIdentityToken,
-  });
+    const sts = new STSClient({ region: process.env.AWS_REGION });
+    const res = await sts.send(
+      new AssumeRoleWithWebIdentityCommand({
+        RoleArn: roleArn,
+        RoleSessionName: "truss-session",
+        WebIdentityToken: webIdentityToken,
+      })
+    );
 
-  const response = await command.input ? await sts.send(command) : undefined;
+    if (!res.Credentials) throw new Error("STS AssumeRoleWithWebIdentity returned no credentials");
 
-  if (!response?.Credentials) {
-    throw new Error("Failed to assume role via OIDC");
-  }
-
-  return {
-    accessKeyId: response.Credentials.AccessKeyId!,
-    secretAccessKey: response.Credentials.SecretAccessKey!,
-    sessionToken: response.Credentials.SessionToken!,
+    _cachedCreds = {
+      accessKeyId: res.Credentials.AccessKeyId!,
+      secretAccessKey: res.Credentials.SecretAccessKey!,
+      sessionToken: res.Credentials.SessionToken!,
+      expiry: res.Credentials.Expiration?.getTime() ?? now + 3_600_000,
+    };
+    return _cachedCreds;
   };
 }
 
-export async function getS3Client() {
-  const credentials = await getOIDCCredentials();
-  return new S3Client({
-    region: process.env.AWS_REGION,
-    ...(credentials ? { credentials } : {}),
-  });
+const credentialProvider = buildCredentialProvider();
+
+const sharedConfig = () => ({
+  region: process.env.AWS_REGION,
+  ...(credentialProvider ? { credentials: credentialProvider } : {}),
+});
+
+let _docClient: DynamoDBDocumentClient | null = null;
+
+export function getDynamoDocClient(): DynamoDBDocumentClient {
+  if (!_docClient) {
+    _docClient = DynamoDBDocumentClient.from(new DynamoDBClient(sharedConfig()));
+  }
+  return _docClient;
 }
 
-export async function getDynamoClient() {
-  const credentials = await getOIDCCredentials();
-  return new DynamoDBClient({
-    region: process.env.AWS_REGION,
-    ...(credentials ? { credentials } : {}),
-  });
+export function getS3Client(): S3Client {
+  return new S3Client(sharedConfig());
 }

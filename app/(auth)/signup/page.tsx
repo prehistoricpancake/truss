@@ -28,10 +28,24 @@ export default function SignupPage() {
 
   if (sent) {
     return (
-      <>
-        <div className="flex flex-col items-center text-center py-6">
-          <div className="w-14 h-14 rounded-2xl bg-accent/10 flex items-center justify-center mb-4">
-            <IconCircleCheck size={28} stroke={1.5} className="text-accent" />
+      <div
+        className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-bg-cinematic/80 backdrop-blur-md"
+        style={{ animation: "magicOverlayIn 0.45s cubic-bezier(0.16,1,0.3,1) both" }}
+      >
+        <style>{`
+          @keyframes magicOverlayIn {
+            from { opacity: 0; transform: scale(0.97); }
+            to   { opacity: 1; transform: scale(1); }
+          }
+        `}</style>
+
+        <Link href="/" className="absolute top-8 left-10 text-lg font-semibold text-white tracking-tight">
+          truss
+        </Link>
+
+        <div className="flex flex-col items-center text-center max-w-xs px-6">
+          <div className="w-16 h-16 rounded-2xl bg-accent/10 ring-1 ring-accent/20 flex items-center justify-center mb-5">
+            <IconCircleCheck size={32} stroke={1.5} className="text-accent" />
           </div>
           <h2 className="text-2xl font-semibold text-white mb-2">Check your email</h2>
           <p className="text-sm text-zinc-500 mb-1">We sent a sign-in link to</p>
@@ -44,7 +58,7 @@ export default function SignupPage() {
             Use a different email
           </button>
         </div>
-      </>
+      </div>
     );
   }
 

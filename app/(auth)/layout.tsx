@@ -19,7 +19,7 @@ export default function AuthLayout({
 
       {/* Warped hero background */}
       <div className="flex-1 relative overflow-hidden">
-        <WarpedHero />
+        <WarpedHero hideCta />
       </div>
     </div>
   );
