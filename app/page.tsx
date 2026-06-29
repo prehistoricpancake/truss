@@ -191,7 +191,7 @@ export default function LandingPage() {
       {/* Footer */}
       <footer className="px-6 py-8 border-t border-border-hair">
         <div className="flex items-center justify-between">
-          <span className="text-sm text-zinc-600">&copy; 2024 Truss. All rights reserved.</span>
+          <span className="text-sm text-zinc-600">&copy; 2026 Truss. All rights reserved.</span>
           <div className="flex gap-6 text-xs text-zinc-600">
             <span className="hover:text-zinc-400 cursor-pointer">Terms</span>
             <span className="hover:text-zinc-400 cursor-pointer">Privacy</span>
