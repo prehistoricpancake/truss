@@ -1,7 +1,7 @@
 from diagrams import Diagram, Cluster, Edge, Node
 from diagrams.aws.database import Dynamodb
 from diagrams.aws.storage import S3
-from diagrams.aws.security import Cognito, SecretsManager, IAMAWSSts as STS
+from diagrams.aws.security import Cognito, IAMAWSSts as STS
 from diagrams.generic.compute import Rack
 from diagrams.generic.blank import Blank
 from diagrams.onprem.client import User
@@ -59,13 +59,12 @@ with Diagram(
             "penwidth": "2",
         },
     ):
-        dynamo = Dynamodb("truss-main\n(single table)")
+        dynamo = Dynamodb("truss-main\n(single table,\ninc. magic-link tokens)")
         s3 = S3("truss-uploads\n(presigned, scoped bucket)")
-        cognito = Cognito("User Pool\n(MFA/TOTP)")
-        secrets = SecretsManager("Centralized secrets")
+        cognito = Cognito("User Pool\n(signup / verify)")
 
         with Cluster(
-            "Clip selection pipeline",
+            "AI Analysis Pipeline",
             graph_attr={
                 "style": "dashed",
                 "color": "#888888",
@@ -73,7 +72,7 @@ with Diagram(
                 "fontcolor": "#555555",
             },
         ):
-            clip_pipeline = Blank("Two-tier Claude scoring\n(see diagram 2)")
+            clip_pipeline = Blank("AI highlight scoring\n(Google Gemini)")
 
     with Cluster(
         "External APIs",
@@ -86,7 +85,8 @@ with Diagram(
         },
     ):
         stripe = Blank("Stripe\n(Checkout + Webhooks)")
-        anthropic = Blank("Anthropic API")
+        gemini = Blank("Google AI\n(gemini-3.5-flash)")
+        resend = Blank("Resend\n(magic link email)")
 
     # Edges
     browser >> Edge(label="HTTPS/TLS") >> edge_sec
@@ -95,8 +95,8 @@ with Diagram(
     sts >> dynamo
     sts >> s3
     sts >> cognito
-    app_router >> Edge(label="runtime secrets") >> secrets
     app_router >> clip_pipeline
+    app_router >> Edge(label="magic link", style="dashed") >> resend
     app_router >> Edge(label="webhook", style="dashed") >> stripe
     stripe >> Edge(style="dashed") >> app_router
-    clip_pipeline >> anthropic
+    clip_pipeline >> gemini
