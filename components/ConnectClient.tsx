@@ -42,7 +42,7 @@ const PLATFORMS: Platform[] = [
     iconColor: "text-purple-400",
     description: "Ingest live stream chat and detect engagement spikes in real time.",
     capabilities: ["Live chat ingestion", "Spike detection", "VOD access"],
-    available: true,
+    available: false,
   },
   {
     id: "tiktok",
@@ -51,7 +51,7 @@ const PLATFORMS: Platform[] = [
     iconColor: "text-white",
     description: "Publish vertical 9:16 clips directly to TikTok.",
     capabilities: ["Upload clips", "Draft scheduling"],
-    available: true,
+    available: false,
   },
   {
     id: "instagram",
@@ -69,7 +69,7 @@ const PLATFORMS: Platform[] = [
     iconColor: "text-indigo-400",
     description: "Send clip notifications to a Discord channel via webhook.",
     capabilities: ["Clip notifications", "Custom messages"],
-    available: true,
+    available: false,
   },
 ];
 
@@ -103,7 +103,11 @@ export function ConnectClient({ connectedPlatforms, tokens, success, errorParam 
     if (navigateTo) window.location.href = navigateTo;
   }, [navigateTo]);
 
-  const handleConnect = (platformId: string) => {
+  const handleConnect = (platformId: string, available: boolean) => {
+    if (!available) {
+      setNavigateTo(`/connect/standby?platform=${platformId}`);
+      return;
+    }
     setConnecting(platformId);
     setNavigateTo(`/api/connect/${platformId}`);
   };
@@ -202,11 +206,7 @@ export function ConnectClient({ connectedPlatforms, tokens, success, errorParam 
 
                 {/* Action */}
                 <div className="shrink-0">
-                  {!platform.available ? (
-                    <span className="text-xs text-zinc-600 px-3 py-2 border border-zinc-800 rounded-lg block">
-                      Not yet available
-                    </span>
-                  ) : isConnected ? (
+                  {isConnected ? (
                     <button
                       onClick={() => handleDisconnect(platform.id)}
                       disabled={!!isDisconnecting}
@@ -221,7 +221,7 @@ export function ConnectClient({ connectedPlatforms, tokens, success, errorParam 
                     </button>
                   ) : (
                     <button
-                      onClick={() => handleConnect(platform.id)}
+                      onClick={() => handleConnect(platform.id, platform.available)}
                       disabled={!!isConnecting}
                       className="flex items-center gap-2 px-3 py-2 text-xs bg-accent hover:bg-accent/90 text-white rounded-lg transition-colors disabled:opacity-60 font-medium"
                     >

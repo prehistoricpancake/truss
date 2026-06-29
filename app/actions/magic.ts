@@ -5,7 +5,7 @@ import { Resend } from "resend";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
-const baseUrl = process.env.NEXTAUTH_URL || "https://truss-rust.vercel.app";
+const baseUrl = process.env.NEXTAUTH_URL || "https://the-truss-app.vercel.app";
 const isDev = process.env.NODE_ENV === "development";
 const fromAddress = process.env.RESEND_FROM || "onboarding@resend.dev";
 

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { savePlatformToken, updateCreator, getCreator } from "@/lib/db";
 
-const BASE = process.env.NEXTAUTH_URL || "https://truss-rust.vercel.app";
+const BASE = process.env.NEXTAUTH_URL || "https://the-truss-app.vercel.app";
 
 type TokenResponse = {
   access_token: string;
