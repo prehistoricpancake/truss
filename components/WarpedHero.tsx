@@ -2,7 +2,7 @@
 
 export function WarpedHero({ hideCta }: { hideCta?: boolean } = {}) {
   return (
-    <section className="relative w-full h-[600px] overflow-hidden bg-bg-cinematic flex items-center justify-center">
+    <section className="relative w-full h-full min-h-screen overflow-hidden bg-bg-cinematic flex items-center justify-center">
       {/* Animated gradient background */}
       <div
         className="absolute inset-0 motion-reduce:animate-none"
