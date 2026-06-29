@@ -18,7 +18,7 @@ On first login you land on the onboarding page. Set your display name and option
 Go to **Upload** and drag in a video file. It uploads directly from your browser to S3 via a presigned URL — no file size limit from the app server.
 
 ### 4. AI Analysis
-Once uploaded, Truss sends the video to Gemini 3.5 Flash, which identifies the highest-impact moments and scores each for viral potential (1–100). Results appear as timestamped chapters.
+Once uploaded, Truss sends the video to Gemini 2.0 Flash, which identifies the highest-impact moments and scores each for viral potential (1–100). Results appear as timestamped chapters.
 
 ### 5. Clips
 Extracted highlights appear in **Clips** with virality scores. Each clip is ready to export as a 9:16 vertical short.
@@ -43,7 +43,7 @@ The **Analytics** page tracks daily views, followers, clips generated, and watch
 | Email | Resend |
 | Database | Amazon DynamoDB (single-table design) |
 | Storage | Amazon S3 (presigned uploads) |
-| AI | Google Gemini 3.5 Flash via Vercel AI SDK |
+| AI | Google Gemini 2.0 Flash via Vercel AI SDK |
 | Credentials | `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` env vars |
 | Deployment | Vercel |
 
@@ -84,7 +84,7 @@ This writes ~1,050 items for the given email: 30 assets, ~180 clips, 25 streams,
 | `RESEND_FROM` | Sender address (e.g. `hello@yourdomain.com`) |
 | `GOOGLE_CLIENT_ID` | Google OAuth client ID (YouTube connect + AI) |
 | `GOOGLE_CLIENT_SECRET` | Google OAuth client secret |
-| `GOOGLE_GENERATIVE_AI_API_KEY` | Google AI Studio key for Gemini |
+| `GEMINI_API_KEY` | Google AI Studio key for Gemini |
 | `NEXTAUTH_SECRET` | NextAuth signing secret |
 | `AUTH_SECRET` | Auth.js v5 secret (same value as `NEXTAUTH_SECRET`) |
 | `NEXTAUTH_URL` | App base URL (e.g. `https://the-truss-app.vercel.app`) |

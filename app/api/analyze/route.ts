@@ -1,7 +1,11 @@
-import { google } from "@ai-sdk/google";
+import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import { generateObject } from "ai";
 import { z } from "zod";
 import { NextRequest, NextResponse } from "next/server";
+
+const google = createGoogleGenerativeAI({
+  apiKey: process.env.GEMINI_API_KEY,
+});
 
 const highlightSchema = z.object({
   highlights: z.array(
@@ -26,7 +30,7 @@ export async function POST(req: NextRequest) {
     }
 
     const result = await generateObject({
-      model: google("gemini-3.5-flash"),
+      model: google("gemini-3-flash-preview"),
       schema: highlightSchema,
       prompt: `Analyze this media asset context payload. Cross-reference transcript timestamps with the raw visual energy flags. Isolate high-impact narrative ranges and score each for viral potential.
 
