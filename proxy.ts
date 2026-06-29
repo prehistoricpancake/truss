@@ -21,7 +21,10 @@ const authPaths = ["/login", "/signup", "/verify", "/success", "/magic-verify"];
 export default function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
+  // NextAuth v5 uses "authjs.*" prefix; v4 used "next-auth.*" — check both
   const sessionToken =
+    request.cookies.get("authjs.session-token")?.value ||
+    request.cookies.get("__Secure-authjs.session-token")?.value ||
     request.cookies.get("next-auth.session-token")?.value ||
     request.cookies.get("__Secure-next-auth.session-token")?.value;
 

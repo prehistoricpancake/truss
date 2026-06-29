@@ -2,8 +2,6 @@
 
 import { createMagicToken } from "@/lib/magic";
 import { Resend } from "resend";
-import { signIn } from "@/lib/auth";
-import { AuthError } from "next-auth";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -55,18 +53,3 @@ export async function sendMagicLink(email: string): Promise<{ success: boolean; 
   }
 }
 
-// Called from the magic-verify page via form submit (server action context can set cookies)
-export async function verifyMagicAndSignIn(
-  email: string,
-  token: string
-): Promise<{ error: string } | undefined> {
-  try {
-    await signIn("credentials", { email, token, redirectTo: "/onboarding" });
-  } catch (err) {
-    if (err instanceof AuthError) {
-      return { error: "Link expired or invalid" };
-    }
-    // Re-throw NEXT_REDIRECT so Next.js performs the navigation
-    throw err;
-  }
-}

@@ -16,6 +16,7 @@ import {
   IconBrandTiktok,
   IconBrandInstagram,
   IconBrandDiscord,
+  IconSparkles,
 } from "@tabler/icons-react";
 
 const NAV_ITEMS = [
@@ -116,6 +117,23 @@ export function ProductNav({ creatorName, creatorEmail, connectedPlatforms = [] 
           })}
         </div>
       </div>
+
+      {/* Demo tab — internal only */}
+      {creatorEmail === "wanjikuwawambui@gmail.com" && (
+        <div className="px-3 pb-3">
+          <Link
+            href="/demo"
+            className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${
+              pathname.startsWith("/demo")
+                ? "bg-accent-tint text-white border-l-2 border-accent -ml-px"
+                : "text-zinc-600 hover:text-zinc-400 hover:bg-white/[0.03]"
+            }`}
+          >
+            <IconSparkles size={18} stroke={1.5} />
+            <span className="font-normal">Demo</span>
+          </Link>
+        </div>
+      )}
 
       {/* Bottom user */}
       <div className="px-3 py-4 border-t border-border">
