@@ -7,9 +7,19 @@ import {
   UpdateCommand,
 } from "@aws-sdk/lib-dynamodb";
 
-const client = new DynamoDBClient({ region: process.env.AWS_REGION });
-const docClient = DynamoDBDocumentClient.from(client);
-const TABLE = process.env.DYNAMODB_TABLE_NAME!;
+let _docClient: DynamoDBDocumentClient | null = null;
+
+function getDocClient() {
+  if (!_docClient) {
+    const client = new DynamoDBClient({ region: process.env.AWS_REGION });
+    _docClient = DynamoDBDocumentClient.from(client);
+  }
+  return _docClient;
+}
+
+function getTable() {
+  return process.env.DYNAMODB_TABLE_NAME!;
+}
 
 // Types
 export interface CreatorMetadata {
@@ -92,9 +102,9 @@ export interface AnalyticsDaily {
 
 export async function createCreator(userId: string, email: string, name?: string) {
   const now = new Date().toISOString();
-  await docClient.send(
+  await getDocClient().send(
     new PutCommand({
-      TableName: TABLE,
+      TableName: getTable(),
       Item: {
         PK: `CREATOR#${userId}`,
         SK: "METADATA",
@@ -110,9 +120,9 @@ export async function createCreator(userId: string, email: string, name?: string
 }
 
 export async function getCreator(userId: string): Promise<CreatorMetadata | null> {
-  const result = await docClient.send(
+  const result = await getDocClient().send(
     new GetCommand({
-      TableName: TABLE,
+      TableName: getTable(),
       Key: { PK: `CREATOR#${userId}`, SK: "METADATA" },
     })
   );
@@ -135,9 +145,9 @@ export async function updateCreatorPlan(
     params[":sid"] = stripeCustomerId;
   }
 
-  await docClient.send(
+  await getDocClient().send(
     new UpdateCommand({
-      TableName: TABLE,
+      TableName: getTable(),
       Key: { PK: `CREATOR#${userId}`, SK: "METADATA" },
       UpdateExpression: updateExpr,
       ExpressionAttributeNames: { "#plan": "plan" },
@@ -148,9 +158,9 @@ export async function updateCreatorPlan(
 
 export async function createAsset(userId: string, videoId: string, filename: string, s3Key: string) {
   const now = new Date().toISOString();
-  await docClient.send(
+  await getDocClient().send(
     new PutCommand({
-      TableName: TABLE,
+      TableName: getTable(),
       Item: {
         PK: `CREATOR#${userId}`,
         SK: `ASSET#${videoId}`,
@@ -166,9 +176,9 @@ export async function createAsset(userId: string, videoId: string, filename: str
 }
 
 export async function updateAssetStatus(userId: string, videoId: string, status: Asset["status"]) {
-  await docClient.send(
+  await getDocClient().send(
     new UpdateCommand({
-      TableName: TABLE,
+      TableName: getTable(),
       Key: { PK: `CREATOR#${userId}`, SK: `ASSET#${videoId}` },
       UpdateExpression: "SET #status = :status, updatedAt = :now",
       ExpressionAttributeNames: { "#status": "status" },
@@ -181,9 +191,9 @@ export async function updateAssetStatus(userId: string, videoId: string, status:
 }
 
 export async function saveChapters(userId: string, videoId: string, chapters: Chapter[]) {
-  await docClient.send(
+  await getDocClient().send(
     new PutCommand({
-      TableName: TABLE,
+      TableName: getTable(),
       Item: {
         PK: `CREATOR#${userId}`,
         SK: `ASSET#${videoId}#CHAPTERS`,
@@ -195,9 +205,9 @@ export async function saveChapters(userId: string, videoId: string, chapters: Ch
 }
 
 export async function getAssets(userId: string): Promise<Asset[]> {
-  const result = await docClient.send(
+  const result = await getDocClient().send(
     new QueryCommand({
-      TableName: TABLE,
+      TableName: getTable(),
       KeyConditionExpression: "PK = :pk AND begins_with(SK, :sk)",
       ExpressionAttributeValues: {
         ":pk": `CREATOR#${userId}`,
@@ -209,9 +219,9 @@ export async function getAssets(userId: string): Promise<Asset[]> {
 }
 
 export async function createClip(userId: string, clip: Omit<Clip, "PK" | "SK">) {
-  await docClient.send(
+  await getDocClient().send(
     new PutCommand({
-      TableName: TABLE,
+      TableName: getTable(),
       Item: {
         PK: `CREATOR#${userId}`,
         SK: `CLIP#${clip.clipId}`,
@@ -222,9 +232,9 @@ export async function createClip(userId: string, clip: Omit<Clip, "PK" | "SK">) 
 }
 
 export async function getClips(userId: string): Promise<Clip[]> {
-  const result = await docClient.send(
+  const result = await getDocClient().send(
     new QueryCommand({
-      TableName: TABLE,
+      TableName: getTable(),
       KeyConditionExpression: "PK = :pk AND begins_with(SK, :sk)",
       ExpressionAttributeValues: {
         ":pk": `CREATOR#${userId}`,
@@ -236,9 +246,9 @@ export async function getClips(userId: string): Promise<Clip[]> {
 }
 
 export async function createStream(userId: string, stream: Omit<StreamRecord, "PK" | "SK">) {
-  await docClient.send(
+  await getDocClient().send(
     new PutCommand({
-      TableName: TABLE,
+      TableName: getTable(),
       Item: {
         PK: `CREATOR#${userId}`,
         SK: `STREAM#${stream.streamId}`,
@@ -249,9 +259,9 @@ export async function createStream(userId: string, stream: Omit<StreamRecord, "P
 }
 
 export async function getStreams(userId: string): Promise<StreamRecord[]> {
-  const result = await docClient.send(
+  const result = await getDocClient().send(
     new QueryCommand({
-      TableName: TABLE,
+      TableName: getTable(),
       KeyConditionExpression: "PK = :pk AND begins_with(SK, :sk)",
       ExpressionAttributeValues: {
         ":pk": `CREATOR#${userId}`,
@@ -263,9 +273,9 @@ export async function getStreams(userId: string): Promise<StreamRecord[]> {
 }
 
 export async function writeChatSpike(userId: string, spike: Omit<ChatSpike, "PK" | "SK">) {
-  await docClient.send(
+  await getDocClient().send(
     new PutCommand({
-      TableName: TABLE,
+      TableName: getTable(),
       Item: {
         PK: `CREATOR#${userId}`,
         SK: `LIVE_CHAT_SPIKE#${spike.timestamp}`,
@@ -276,9 +286,9 @@ export async function writeChatSpike(userId: string, spike: Omit<ChatSpike, "PK"
 }
 
 export async function getChatSpikes(userId: string): Promise<ChatSpike[]> {
-  const result = await docClient.send(
+  const result = await getDocClient().send(
     new QueryCommand({
-      TableName: TABLE,
+      TableName: getTable(),
       KeyConditionExpression: "PK = :pk AND begins_with(SK, :sk)",
       ExpressionAttributeValues: {
         ":pk": `CREATOR#${userId}`,
@@ -290,9 +300,9 @@ export async function getChatSpikes(userId: string): Promise<ChatSpike[]> {
 }
 
 export async function putAnalytics(userId: string, analytics: Omit<AnalyticsDaily, "PK" | "SK">) {
-  await docClient.send(
+  await getDocClient().send(
     new PutCommand({
-      TableName: TABLE,
+      TableName: getTable(),
       Item: {
         PK: `CREATOR#${userId}`,
         SK: `ANALYTICS#DAILY#${analytics.date}`,
@@ -303,9 +313,9 @@ export async function putAnalytics(userId: string, analytics: Omit<AnalyticsDail
 }
 
 export async function getAnalytics(userId: string, startDate?: string): Promise<AnalyticsDaily[]> {
-  const result = await docClient.send(
+  const result = await getDocClient().send(
     new QueryCommand({
-      TableName: TABLE,
+      TableName: getTable(),
       KeyConditionExpression: startDate
         ? "PK = :pk AND SK BETWEEN :start AND :end"
         : "PK = :pk AND begins_with(SK, :sk)",

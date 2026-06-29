@@ -1,120 +1,141 @@
-# Truss — Cross-Platform Content Infrastructure
+# Truss
 
-Truss ingests one master video or live stream and outputs long-form metadata plus algorithmically-cut vertical 9:16 shorts for simultaneous publishing across YouTube, TikTok, Instagram, Twitch, and Discord.
+**Cross-platform content infrastructure for creators.** Upload one video or connect a live stream — Truss extracts the best moments, scores them for viral potential, and publishes vertical 9:16 clips across YouTube, TikTok, Instagram, Twitch, and Discord simultaneously.
 
-## Quick Start
+🌐 **Live:** [truss-rust.vercel.app](https://truss-rust.vercel.app)
+
+---
+
+## How It Works
+
+### 1. Sign Up
+Create an account with email + password or Google. After verifying your email, you land on the dashboard.
+
+### 2. Upload a Video
+Go to **Upload** and drag in a video file. It uploads directly from your browser to S3 via a presigned URL — no file size limit from the app server.
+
+### 3. AI Analysis
+Once uploaded, click **Run AI Analysis**. Truss sends the video transcript to Gemini 3.5 Flash, which identifies the highest-impact moments and scores each for viral potential (1–100).
+
+### 4. Clips
+The extracted highlights appear in **Clips** as timestamped segments with virality scores. Each clip is ready to export as a 9:16 vertical short.
+
+### 5. Live Streams
+Connect a live stream in **Streams**. Truss monitors unified chat across platforms and detects engagement spikes (>200% baseline message rate) in real time, auto-marking clip boundaries at peak moments.
+
+### 6. Analytics
+The **Analytics** page tracks daily views, followers, clips generated, and watch time across all connected platforms in one place.
+
+---
+
+## Tech Stack
+
+| Layer | Technology |
+|-------|-----------|
+| Framework | Next.js 16.2.9 (App Router, Turbopack) |
+| Auth | AWS Cognito + NextAuth 5 |
+| Database | Amazon DynamoDB (single-table) |
+| Storage | Amazon S3 (presigned uploads) |
+| AI | Google Gemini 3.5 Flash via Vercel AI SDK |
+| Credentials | AWS STS OIDC federation (Vercel → AWS) |
+| Deployment | Vercel |
+
+---
+
+## Local Development
 
 ```bash
 npm install
-cp .env.example .env   # Fill in your credentials
-npm run dev             # Runs on http://localhost:3000
+cp .env.example .env   # fill in your credentials
+npm run dev             # http://localhost:3000
 ```
 
-## Prerequisites
-
-- Node.js 20.9+ (tested with Node 25)
-- Next.js 16.2.9 (pinned)
-- AWS account with DynamoDB table and S3 bucket
-- Cognito User Pool with Google federation
-- Stripe account with products configured
-- OpenAI API key for GPT-4o analysis
-
-## AWS Setup
-
-### DynamoDB
-1. Create a table with partition key `PK` (String) and sort key `SK` (String)
-2. No GSIs required — all access patterns use PK + SK `begins_with`
-
-### S3
-1. Create a bucket for video uploads
-2. Configure CORS for presigned PUT uploads from your domain
-
-### Cognito User Pool
-1. Create a user pool with email as the sign-in attribute
-2. Enable managed login
-3. Add Google as a federated identity provider:
-   - Create OAuth credentials in Google Cloud Console
-   - Configure `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET`
-   - Set callback URL to `https://<your-cognito-domain>/oauth2/idpresponse`
-4. Create an app client with the hosted UI enabled
-
-### IAM (for Vercel OIDC)
-- Create an IAM role with trust policy for Vercel's OIDC provider
-- Attach policies for DynamoDB, S3, and STS access
-- No static AWS keys — credentials are obtained via OIDC token exchange
-
-## Stripe Setup
-
-1. Create three products in the Stripe Dashboard:
-   - **Starter** — $0/mo (free tier, no price needed)
-   - **Pro** — $29/mo (copy price ID to `STRIPE_PRICE_PRO`)
-   - **Studio** — $99/mo (copy price ID to `STRIPE_PRICE_STUDIO`)
-2. Set up a webhook endpoint pointing to `/api/webhooks/stripe`
-   - Events: `checkout.session.completed`, `customer.subscription.updated`, `customer.subscription.deleted`
-   - Copy signing secret to `STRIPE_WEBHOOK_SECRET`
-3. Enable the Customer Portal in Stripe settings
-
-## Environment Variables
-
-See `.env.example` for the full list. All secrets must be set via environment variables — zero hardcoded credentials.
-
-## What's Real vs. Simulated
-
-### Real Integrations
-- **Cognito Auth** — Real user pool, Google federation, email/password signup with verification codes
-- **AI Analysis** — Real GPT-4o calls via Vercel AI SDK `generateObject` for highlight extraction
-- **S3 Upload** — Real presigned URL generation and direct-to-S3 uploads
-- **DynamoDB** — Real single-table writes for creators, assets, chapters, clips, chat spikes
-- **Stripe Billing** — Real Checkout sessions, webhook-driven plan state, Customer Portal links
-- **Chat Spike Detection** — Real detection logic (>200% baseline) with real DynamoDB writes
-
-### Simulated (labeled with `// SIMULATED:` comments and visible badges)
-- **Video Rendering** — FFmpeg/Step Functions clip rendering is not wired; output shows `Simulated for demo` badge
-- **Live Stream Ingestion** — No real Twitch/YouTube connection; chat messages are generated by a simulated message generator
-- **Scene Imagery** — `dune-walker.svg` is a hand-built SVG placeholder; swap for real generated stills before shipping
-- **Transcript Input** — The demo simulator feeds a canned transcript to the real AI; labeled "mocked transcript input"
-- **Seed Data** — Dashboard analytics, assets, and chat backlog are seeded for demo purposes
-
-## 3-Minute Demo Script
-
-1. **Landing (30s)** — Show the warped-perspective hero, scroll through the masonry grid, platform logos, and feature cards
-2. **Auth Flow (30s)** — Click "Get started", show the cinematic auth screens with the dune-walker scene, demonstrate the password checklist
-3. **Dashboard (60s)** — Show the seeded dashboard with stats, recent assets, and chat feed. Click "Run simulation" to trigger the live chat spike — watch the spike detection fire in the feed
-4. **Upload & AI Analysis (45s)** — Navigate to Upload, click "Run AI Analysis Demo" to trigger a real GPT-4o call. Watch the real JSON response render with virality scores
-5. **Product Pages (15s)** — Quick tour of Assets, Clips, Streams, Analytics pages showing seeded data
-
-## Architecture
-
-```
-Next.js 16.2.9 (App Router, Turbopack)
-├── /(marketing)     Landing, Pricing — cinematic register
-├── /(auth)          Login, Signup, Verify, Success — cinematic + form panel
-├── /(product)       Dashboard, Assets, Clips, Streams, Analytics, Profile — product register
-├── /upload          Direct S3 upload with presigned URLs
-├── /api
-│   ├── /analyze     GPT-4o highlight extraction (real)
-│   ├── /chat-spike  Spike detection + DynamoDB write (real)
-│   ├── /upload      Presigned URL generation (real)
-│   └── /webhooks    Stripe webhook handler (real)
-├── /lib             db.ts, aws.ts, cognito.ts, stripe.ts, auth.ts
-└── /components      WarpedHero, CinematicScene, ChatFeed, BentoStat, etc.
-```
-
-## Seed Data
+Seed the database with demo data:
 
 ```bash
 npx tsx scripts/seed.ts
 ```
 
-Populates DynamoDB with a demo creator, 14 days of analytics, 5 assets, 8 clips, 2 streams, and 1 pre-flagged chat spike so the dashboard looks alive on first load.
+---
 
-## Design System
+## Environment Variables
 
-Two visual registers:
-- **Cinematic** (marketing/auth) — near-black canvas, oversized type, full-bleed imagery
-- **Product** — quiet zinc chrome, content carries the color, single accent use per screen
+| Variable | Description |
+|----------|-------------|
+| `AWS_REGION` | AWS region (e.g. `eu-west-1`) |
+| `DYNAMODB_TABLE_NAME` | DynamoDB table name |
+| `S3_BUCKET` | S3 bucket for video uploads |
+| `COGNITO_USER_POOL_ID` | Cognito User Pool ID |
+| `COGNITO_CLIENT_ID` | Cognito app client ID |
+| `COGNITO_CLIENT_SECRET` | Cognito app client secret |
+| `COGNITO_HOSTED_DOMAIN` | Cognito hosted UI domain |
+| `NEXT_PUBLIC_COGNITO_USER_POOL_ID` | Same as above (client-side) |
+| `NEXT_PUBLIC_COGNITO_CLIENT_ID` | Same as above (client-side) |
+| `GOOGLE_CLIENT_ID` | Google OAuth client ID |
+| `GOOGLE_CLIENT_SECRET` | Google OAuth client secret |
+| `GOOGLE_GENERATIVE_AI_API_KEY` | Google AI Studio API key |
+| `NEXTAUTH_SECRET` | NextAuth signing secret |
+| `NEXTAUTH_URL` | App base URL |
 
-Accent: `#6d5ef0` (electric indigo-violet). One filled accent button per screen max. Active nav = tint background + 2px left border.
+---
 
-Type: Inter, two weights in product UI (400/500). Marketing: 700/800 with uppercase+italic for display.
-Icons: Tabler outline set throughout.
+## AWS Setup
+
+### DynamoDB
+Create a table with partition key `PK` (String) and sort key `SK` (String). No GSIs needed — all queries use `begins_with` on the sort key.
+
+Single-table key schema:
+```
+CREATOR#<userId>  METADATA                    → creator profile
+CREATOR#<userId>  ASSET#<id>                  → uploaded video
+CREATOR#<userId>  CLIP#<id>                   → extracted clip
+CREATOR#<userId>  STREAM#<id>                 → live stream
+CREATOR#<userId>  LIVE_CHAT_SPIKE#<timestamp> → chat spike event
+CREATOR#<userId>  ANALYTICS#DAILY#<date>      → daily metrics
+```
+
+### S3
+Create a bucket and configure CORS to allow presigned PUT uploads from your domain:
+```json
+[{
+  "AllowedOrigins": ["https://truss-rust.vercel.app", "http://localhost:3000"],
+  "AllowedMethods": ["PUT"],
+  "AllowedHeaders": ["*"]
+}]
+```
+
+### Cognito
+1. Create a User Pool with email as the sign-in attribute
+2. Create an app client with `USER_PASSWORD_AUTH` enabled and a client secret
+3. Add Google as a federated identity provider (optional)
+4. Set callback URLs:
+   - `https://truss-rust.vercel.app/api/auth/callback/cognito`
+   - `http://localhost:3000/api/auth/callback/cognito`
+
+### IAM (Vercel OIDC)
+Create an IAM role with a trust policy for Vercel's OIDC provider. Attach policies for DynamoDB, S3, and STS. No static AWS credentials — Vercel exchanges an OIDC token for temporary credentials at runtime.
+
+---
+
+## What's Real vs. Simulated
+
+### Real
+- Cognito sign-up, email verification, Google sign-in
+- S3 presigned URL generation and direct browser uploads
+- DynamoDB reads/writes for all entities
+- Gemini AI analysis for highlight extraction and virality scoring
+- Chat spike detection (>200% baseline) with DynamoDB writes
+
+### Simulated (labeled in UI)
+- Video rendering pipeline (FFmpeg/Step Functions not wired)
+- Live stream ingestion (no real Twitch/YouTube connection)
+- Chat message feed (simulated message generator in dashboard)
+- Transcript input for AI demo (canned transcript for demonstration)
+
+---
+
+## Deployment
+
+Pushes to `main` auto-deploy to Vercel via GitHub Actions (`.github/workflows/deploy.yml`). Pull requests get preview deployments.
+
+Required GitHub secrets: `VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID`.
