@@ -50,7 +50,6 @@ export default function SignupPage() {
 
   return (
     <>
-      <h2 className="text-2xl font-semibold text-white mb-1">Get started</h2>
       <p className="text-sm text-zinc-500 mb-8">
         Enter your email and we&apos;ll send you a sign-in link.
       </p>

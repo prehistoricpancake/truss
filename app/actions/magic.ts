@@ -2,18 +2,34 @@
 
 import { createMagicToken } from "@/lib/magic";
 import { Resend } from "resend";
+import { signIn } from "@/lib/auth";
+import { AuthError } from "next-auth";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
 const baseUrl = process.env.NEXTAUTH_URL || "https://truss-rust.vercel.app";
+const isDev = process.env.NODE_ENV === "development";
+const fromAddress = process.env.RESEND_FROM || "onboarding@resend.dev";
 
 export async function sendMagicLink(email: string): Promise<{ success: boolean; error?: string }> {
+  let token: string;
   try {
-    const token = await createMagicToken(email);
-    const link = `${baseUrl}/magic-verify?token=${token}&email=${encodeURIComponent(email)}`;
+    token = await createMagicToken(email);
+  } catch (error) {
+    console.error("Magic link — DynamoDB error:", error);
+    return { success: false, error: "Failed to create sign-in token. Please try again." };
+  }
 
-    await resend.emails.send({
-      from: "Truss <onboarding@resend.dev>",
+  const link = `${baseUrl}/magic-verify?token=${token}&email=${encodeURIComponent(email)}`;
+
+  if (isDev) {
+    console.log(`\n\n🔗 Magic link for ${email}:\n${link}\n`);
+    return { success: true };
+  }
+
+  try {
+    const { error: resendError } = await resend.emails.send({
+      from: `Truss <${fromAddress}>`,
       to: email,
       subject: "Your sign-in link for Truss",
       html: `
@@ -27,9 +43,30 @@ export async function sendMagicLink(email: string): Promise<{ success: boolean; 
       `,
     });
 
+    if (resendError) {
+      console.error("Magic link — Resend error:", resendError);
+      return { success: false, error: "Failed to send email. Please try again." };
+    }
+
     return { success: true };
   } catch (error) {
-    console.error("Magic link error:", error);
+    console.error("Magic link — Resend exception:", error);
     return { success: false, error: "Failed to send email. Please try again." };
+  }
+}
+
+// Called from the magic-verify page via form submit (server action context can set cookies)
+export async function verifyMagicAndSignIn(
+  email: string,
+  token: string
+): Promise<{ error: string } | undefined> {
+  try {
+    await signIn("credentials", { email, token, redirectTo: "/onboarding" });
+  } catch (err) {
+    if (err instanceof AuthError) {
+      return { error: "Link expired or invalid" };
+    }
+    // Re-throw NEXT_REDIRECT so Next.js performs the navigation
+    throw err;
   }
 }
